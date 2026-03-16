@@ -78,7 +78,7 @@ install_dotnet_sdk() {
   fi
 
   if version_ge "$UBUNTU_VERSION" "22.04"; then
-    run_cmd sudo add-apt-repository -y ppa:dotnet/backports
+    as_root add-apt-repository -y ppa:dotnet/backports
     apt_update
     apt_install dotnet-sdk-10.0
     return 0
@@ -90,9 +90,9 @@ install_dotnet_sdk() {
 install_rust() {
   log "Installing Rust..."
   apt_install build-essential
-  write_root_file_from_stdin "/etc/profile.d/99-cargo-path.sh" <<'EOF'
+  write_root_file_from_stdin "/etc/profile.d/99-cargo-path.sh" <<'EOF2'
 export PATH="$HOME/.cargo/bin:$PATH"
-EOF
+EOF2
 
   if version_ge "$UBUNTU_VERSION" "24.04"; then
     apt_install rustup

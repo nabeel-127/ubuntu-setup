@@ -56,15 +56,15 @@ export DRY_RUN
 
 # shellcheck source=scripts/lib/common.sh
 source "$SCRIPT_DIR/scripts/lib/common.sh"
-# shellcheck source=scripts/install-core.sh
-source "$SCRIPT_DIR/scripts/install-core.sh"
-# shellcheck source=scripts/install-dev.sh
-source "$SCRIPT_DIR/scripts/install-dev.sh"
+# shellcheck source=scripts/core.sh
+source "$SCRIPT_DIR/scripts/core.sh"
+# shellcheck source=scripts/dev.sh
+source "$SCRIPT_DIR/scripts/dev.sh"
 
 main() {
   if [[ $EUID -eq 0 && -z "${SUDO_USER:-}" ]]; then
-    warn "Running directly as root is supported, but Rust will install into root's home."
-    warn "For a normal desktop setup, run this script as your regular user with sudo access."
+    warn "Running directly as root is supported, but desktop-targeted tools will install for root."
+    warn "For a normal workstation setup, run this script as your regular user with sudo access."
   fi
 
   prepare_system
