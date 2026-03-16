@@ -33,16 +33,19 @@ run_cmd() {
   fi
 }
 
-run_shell() {
-  local cmd="$1"
-  if [[ "${DRY_RUN:-0}" == "1" ]]; then
-    printf '[DRY-RUN] %s\n' "$cmd"
+as_root() {
+  if [[ $EUID -eq 0 ]]; then
+    run_cmd "$@"
   else
-    bash -lc "$cmd"
+    run_cmd sudo "$@"
   fi
 }
 
-require_sudo() {
+require_privilege() {
+  if [[ $EUID -eq 0 ]]; then
+    return 0
+  fi
+
   if ! command_exists sudo; then
     die "sudo is required."
   fi
@@ -73,7 +76,7 @@ detect_platform() {
   if [[ -n "${SUDO_USER:-}" ]]; then
     REAL_USER="${SUDO_USER}"
   else
-    REAL_USER="${USER}"
+    REAL_USER="$(id -un)"
   fi
 
   REAL_HOME="$(getent passwd "$REAL_USER" | cut -d: -f6)"
@@ -87,8 +90,60 @@ version_ge() {
   dpkg --compare-versions "$1" ge "$2"
 }
 
-is_apt_installed() {
-  dpkg-query -W -f='${Status}' "$1" 2>/dev/null | grep -q '^install ok installed$'
+apt_update() {
+  as_root apt-get update
+}
+
+apt_install() {
+  as_root apt-get install -y "$@"
+}
+
+ensure_universe() {
+  as_root add-apt-repository -y universe
+}
+
+ensure_multiverse() {
+  as_root add-apt-repository -y multiverse
+}
+
+ensure_i386_arch() {
+  if [[ "$ARCH" != "amd64" ]]; then
+    return 0
+  fi
+
+  if ! dpkg --print-foreign-architectures | grep -qx 'i386'; then
+    log "Enabling i386 architecture support."
+    as_root dpkg --add-architecture i386
+    apt_update
+  fi
+}
+
+ensure_snapd() {
+  if command_exists snap; then
+    return 0
+  fi
+
+  apt_install snapd
+}
+
+ensure_flatpak_flathub() {
+  if ! command_exists flatpak; then
+    apt_install flatpak
+  fi
+
+  if [[ "${DRY_RUN:-0}" == "1" ]]; then
+    printf '[DRY-RUN] '
+    if [[ $EUID -eq 0 ]]; then
+      printf 'flatpak remote-add --if-not-exists --system flathub https://dl.flathub.org/repo/flathub.flatpakrepo\n'
+    else
+      printf 'sudo flatpak remote-add --if-not-exists --system flathub https://dl.flathub.org/repo/flathub.flatpakrepo\n'
+    fi
+    return 0
+  fi
+
+  if ! flatpak remotes --system --columns=name | grep -qx 'flathub'; then
+    as_root flatpak remote-add --if-not-exists --system flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+  fi
 }
 
 is_snap_installed() {
@@ -99,70 +154,31 @@ is_flatpak_installed() {
   flatpak info --system "$1" >/dev/null 2>&1
 }
 
-apt_update() {
-  run_cmd sudo apt-get update
-}
-
-apt_install() {
-  run_cmd sudo apt-get install -y "$@"
-}
-
-ensure_universe() {
-  run_cmd sudo add-apt-repository -y universe
-}
-
-ensure_multiverse() {
-  run_cmd sudo add-apt-repository -y multiverse
-}
-
-ensure_i386_arch() {
-  if [[ "$ARCH" != "amd64" ]]; then
-    return 0
-  fi
-
-  if ! dpkg --print-foreign-architectures | grep -qx 'i386'; then
-    log "Enabling i386 architecture support."
-    run_cmd sudo dpkg --add-architecture i386
-    apt_update
-  fi
-}
-
-ensure_flatpak_flathub() {
-  if ! command_exists flatpak; then
-    apt_install flatpak
-  fi
-
-  if [[ "${DRY_RUN:-0}" == "1" ]]; then
-    printf '[DRY-RUN] sudo flatpak remote-add --if-not-exists --system flathub https://dl.flathub.org/repo/flathub.flatpakrepo\n'
-    return 0
-  fi
-
-  if ! flatpak remotes --system --columns=name | grep -qx 'flathub'; then
-    run_cmd sudo flatpak remote-add --if-not-exists --system flathub https://dl.flathub.org/repo/flathub.flatpakrepo
-  fi
-}
-
 snap_install() {
   local package="$1"
   shift || true
+
+  ensure_snapd
 
   if is_snap_installed "$package"; then
     log "Snap already installed: ${package}"
     return 0
   fi
 
-  run_cmd sudo snap install "$package" "$@"
+  as_root snap install "$package" "$@"
 }
 
 flatpak_install() {
   local app_id="$1"
+
+  ensure_flatpak_flathub
 
   if is_flatpak_installed "$app_id"; then
     log "Flatpak already installed: ${app_id}"
     return 0
   fi
 
-  run_cmd sudo flatpak install --system -y flathub "$app_id"
+  as_root flatpak install --system -y flathub "$app_id"
 }
 
 install_keyring_from_url() {
@@ -177,7 +193,13 @@ install_keyring_from_url() {
 
   temp_file="$(mktemp)"
   curl -fsSL "$url" | gpg --dearmor > "$temp_file"
-  sudo install -D -m 0644 "$temp_file" "$destination"
+
+  if [[ $EUID -eq 0 ]]; then
+    install -D -m 0644 "$temp_file" "$destination"
+  else
+    sudo install -D -m 0644 "$temp_file" "$destination"
+  fi
+
   rm -f "$temp_file"
 }
 
@@ -200,7 +222,12 @@ write_root_file_from_stdin() {
     return 0
   fi
 
-  sudo install -D -m 0644 "$temp_file" "$destination"
+  if [[ $EUID -eq 0 ]]; then
+    install -D -m 0644 "$temp_file" "$destination"
+  else
+    sudo install -D -m 0644 "$temp_file" "$destination"
+  fi
+
   rm -f "$temp_file"
 }
 
@@ -216,7 +243,7 @@ install_deb_from_url() {
 
   temp_file="$(mktemp --suffix="-${label}.deb")"
   curl -fL "$url" -o "$temp_file"
-  sudo apt-get install -y "$temp_file"
+  as_root apt-get install -y "$temp_file"
   rm -f "$temp_file"
 }
 
@@ -229,7 +256,7 @@ run_as_real_user() {
   fi
 
   if [[ "$REAL_USER" == "root" ]]; then
-    bash -lc "$cmd"
+    HOME="$REAL_HOME" bash -lc "$cmd"
   elif [[ "$(id -un)" == "$REAL_USER" ]]; then
     HOME="$REAL_HOME" bash -lc "$cmd"
   else
@@ -238,13 +265,11 @@ run_as_real_user() {
 }
 
 prepare_system() {
-  require_sudo
+  require_privilege
   detect_platform
   export DEBIAN_FRONTEND=noninteractive
 
   apt_update
-  apt_install ca-certificates curl wget gpg gnupg apt-transport-https software-properties-common lsb-release
+  apt_install ca-certificates curl gpg gnupg software-properties-common lsb-release
   ensure_universe
-  apt_install snapd flatpak
-  ensure_flatpak_flathub
 }
