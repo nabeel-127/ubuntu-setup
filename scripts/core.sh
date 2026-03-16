@@ -6,11 +6,13 @@ install_core_suite() {
   install_dropbox
   install_steam
   install_bottles
+  install_obs_studio
   install_whatsapp_desktop
   install_wine
   install_notion
   install_proton_mail
   install_outlook
+  install_tor_browser
 }
 
 install_microsoft_edge() {
@@ -21,9 +23,9 @@ install_microsoft_edge() {
 
   log "Installing Microsoft Edge..."
   install_keyring_from_url "https://packages.microsoft.com/keys/microsoft.asc" "/etc/apt/keyrings/microsoft.gpg"
-  write_root_file_from_stdin "/etc/apt/sources.list.d/microsoft-edge.list" <<EOF
+  write_root_file_from_stdin "/etc/apt/sources.list.d/microsoft-edge.list" <<EOF2
 deb [arch=amd64 signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/edge stable main
-EOF
+EOF2
   apt_update
   apt_install microsoft-edge-stable
 }
@@ -41,9 +43,9 @@ install_dropbox() {
 
   log "Installing Dropbox..."
   install_keyring_from_url "https://linux.dropbox.com/fedora/rpm-public-key.asc" "/etc/apt/keyrings/dropbox.gpg"
-  write_root_file_from_stdin "/etc/apt/sources.list.d/dropbox.list" <<EOF
+  write_root_file_from_stdin "/etc/apt/sources.list.d/dropbox.list" <<EOF2
 deb [arch=amd64 signed-by=/etc/apt/keyrings/dropbox.gpg] https://linux.dropbox.com/ubuntu ${CODENAME} main
-EOF
+EOF2
   apt_update
   apt_install python3-gpg dropbox
 }
@@ -69,6 +71,13 @@ install_steam() {
 install_bottles() {
   log "Installing Bottles..."
   flatpak_install com.usebottles.bottles
+}
+
+install_obs_studio() {
+  log "Installing OBS Studio..."
+  ensure_universe
+  apt_update
+  apt_install obs-studio
 }
 
 install_whatsapp_desktop() {
@@ -102,4 +111,16 @@ install_proton_mail() {
 install_outlook() {
   log "Installing Outlook wrapper..."
   snap_install outlook-ew
+}
+
+install_tor_browser() {
+  if [[ "$ARCH" != "amd64" ]]; then
+    warn "Skipping Tor Browser Launcher: this apt path is only configured here for amd64."
+    return 0
+  fi
+
+  log "Installing Tor Browser Launcher..."
+  ensure_universe
+  apt_update
+  apt_install torbrowser-launcher
 }
