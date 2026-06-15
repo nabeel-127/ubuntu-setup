@@ -1,0 +1,32 @@
+version: 1
+
+order:
+  - apt.ubuntu
+  - apt.external
+  - nvm
+  - npm
+  - rustup
+  - snap
+  - flatpak
+  - vendor_download
+  - deb
+
+sources:
+  apt.ubuntu:
+    title: Ubuntu Apt
+  apt.external:
+    title: External Apt
+  nvm:
+    title: NVM
+  npm:
+    title: NPM
+  rustup:
+    title: Rustup
+  snap:
+    title: Snap
+  flatpak:
+    title: Flatpak
+  vendor_download:
+    title: Vendor Downloads
+  deb:
+    title: Direct Deb

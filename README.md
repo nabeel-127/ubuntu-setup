@@ -1,98 +1,132 @@
 # ubuntu-setup
 
-A modular Ubuntu workstation bootstrap script for installing the base desktop and development software used in this repo.
+`ubuntu-setup` is a config-driven Ubuntu workstation installer. It reads the
+software catalog from `config/software.yaml`, builds an install plan, and runs
+normal Ubuntu package-manager or vendor commands through Python subprocesses.
 
-## Goals
+The default behavior is intentionally simple: run the app with no filters and it
+installs every enabled item in the catalog.
 
-- Keep the user entrypoint simple: one command
-- Prefer Ubuntu apt first
-- Fall back to Snap only when apt is not the chosen path
-- Fall back to Flathub only when apt and Snap are not the chosen path
-- Avoid custom/manual installers unless there is no reasonable packaged option
-- Keep the structure modular and maintainable for long-term growth
+## Supported Target
 
-## Current structure
-
-```text
-ubuntu-install.sh
-scripts/
-  core.sh
-  dev.sh
-  lib/
-    common.sh
-docs/
-  software-sources.md
-tests/
-  smoke.sh
-```
-
-## Supported target
-
-* Ubuntu only
-* Best-supported path: Ubuntu 22.04 and 24.04 on amd64
-* Some packages also work on arm64, but not every desktop app in this repo supports it
-
-## Install groups
-
-### Core applications
-
-* Microsoft Edge
-* Microsoft Teams
-* Dropbox
-* Steam
-* Bottles
-* OBS Studio
-* WhatsApp Desktop
-* Wine
-* Notion
-* Proton Mail
-* Outlook
-* Tor Browser Launcher
-
-### Developer applications
-
-* Git
-* VS Code
-* Warp
-* Python
-* Node.js
-* .NET SDK 10.0
-* Rust
+- Ubuntu only for real installation
+- Best-supported path: Ubuntu 22.04 and newer on `amd64`
+- `--list` works on any host
+- `--dry-run` can be used off Ubuntu to inspect planned commands
 
 ## Usage
 
-Run everything:
+List everything that would be installed:
 
 ```bash
-chmod +x ubuntu-install.sh scripts/core.sh scripts/dev.sh scripts/lib/common.sh tests/smoke.sh
-./ubuntu-install.sh
+./ubuntu-setup --list
 ```
 
-Run only core apps:
+Install everything:
 
 ```bash
-./ubuntu-install.sh --core
+./ubuntu-setup
 ```
 
-Run only dev apps:
+Preview commands without changing the system:
 
 ```bash
-./ubuntu-install.sh --dev
+./ubuntu-setup --dry-run
 ```
 
-Preview without making changes:
+Install by category:
 
 ```bash
-./ubuntu-install.sh --dry-run
+./ubuntu-setup --category programming
+./ubuntu-setup --category camera
 ```
 
-## Notes
+Install by source:
 
-* Some requested desktop apps do not have official native Linux packages, so this repo uses packaged wrappers where necessary.
-* OBS Studio is installed from Ubuntu apt.
-* Tor Browser is installed through `torbrowser-launcher`, which downloads and launches Tor Browser for Linux.
-* Bottles uses Flathub.
-* See `docs/software-sources.md` for the curated source choices and caveats.
+```bash
+./ubuntu-setup --source apt.ubuntu
+./ubuntu-setup --source apt.external
+```
+
+Install specific software IDs:
+
+```bash
+./ubuntu-setup --only git --only nodejs --only codex
+```
+
+Comma-separated filters also work:
+
+```bash
+./ubuntu-setup --only git,nodejs,codex
+```
+
+## Structure
+
+```text
+main.py
+ubuntu-setup
+bootstrap.py
+pyproject.toml
+config/
+  software.yaml
+  categories.yaml
+  sources.yaml
+  logging.yaml
+runtime/
+  catalog.py
+  categories.py
+  sources.py
+  planner.py
+  runner.py
+  state.py
+system/
+  command.py
+  ubuntu.py
+  privileges.py
+  paths.py
+  shell_profile.py
+  logging.py
+  packages/
+    apt/
+      ubuntu.py
+      external.py
+    deb.py
+    flatpak.py
+    npm.py
+    nvm.py
+    rustup.py
+    snap.py
+    vendor_download.py
+docs/
+tests/
+```
+
+## Source Policy
+
+The catalog is source-first:
+
+1. Use Ubuntu apt when the package is suitable.
+2. Use official/vendor apt repositories when the vendor provides one.
+3. Use the vendor-recommended installer for language/toolchains such as Node.js,
+   Rust, Flutter, Swift, Android tools, Godot, and ChromeDriver.
+4. Use Snap or Flatpak when that is the practical packaged path.
+
+The Python code does not hardcode categories. Categories are labels in
+`config/categories.yaml` and on each software item in `config/software.yaml`.
+
+## Idempotency
+
+The app is safe to rerun. Package adapters check installed state where practical
+before installing:
+
+- apt uses `dpkg-query`
+- snap uses `snap list`
+- flatpak uses `flatpak info`
+- npm checks the global package list
+- vendor downloads check their installed command or target path
+
+Some toolchain commands may still refresh metadata or ensure defaults, but they
+should not repeatedly reinstall the same completed setup.
 
 ## Tests
 
@@ -102,15 +136,5 @@ Run smoke tests:
 bash tests/smoke.sh
 ```
 
-The smoke test currently checks:
-
-* shell syntax for all scripts
-* `--help`
-* dry-run execution on Ubuntu hosts
-
-## Future improvements
-
-* add CI for smoke tests
-* add optional uninstall helpers
-* add more apps through the same modular pattern
-* add a small manifest layer if the package list grows significantly
+The smoke test checks Python syntax, catalog loading, CLI help/list behavior, and
+a dry-run plan for a known package.

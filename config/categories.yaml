@@ -1,0 +1,41 @@
+version: 1
+
+categories:
+  ai:
+    title: AI
+  automation:
+    title: Automation
+  browsers:
+    title: Browsers
+  camera:
+    title: Camera
+  cloud_storage:
+    title: Cloud Storage
+  communication:
+    title: Communication
+  compatibility:
+    title: Compatibility
+  creative:
+    title: Creative
+  database:
+    title: Database
+  editors:
+    title: Editors
+  game_dev:
+    title: Game Development
+  gaming:
+    title: Gaming
+  ides:
+    title: IDEs
+  media:
+    title: Media
+  mobile:
+    title: Mobile
+  privacy:
+    title: Privacy
+  productivity:
+    title: Productivity
+  programming:
+    title: Programming
+  terminal:
+    title: Terminal

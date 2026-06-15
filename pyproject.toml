@@ -1,0 +1,14 @@
+[project]
+name = "ubuntu-setup"
+version = "0.1.0"
+description = "Config-driven Ubuntu workstation setup CLI"
+requires-python = ">=3.10"
+dependencies = [
+  "PyYAML>=6",
+]
+
+[project.scripts]
+ubuntu-setup = "bootstrap:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

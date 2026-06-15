@@ -1,0 +1,648 @@
+# global-rules.txt
+
+## 1. Purpose and scope
+
+1. This is the reusable baseline ruleset for software, app, web, backend, automation, data, machine-vision, tooling, and deployment projects.
+
+2. These rules apply mainly to ChatGPT when analysing projects, reviewing code, debugging, writing implementation plans, or creating Codex-ready instructions.
+
+3. These rules also define what ChatGPT must instruct Codex to do when the user will copy ChatGPT’s answer into Codex.
+
+4. Keep this file generic. Do not put project-specific architecture, folder trees, framework package rules, schemas, route names, UI flows, hardware details, or domain model rules here. Those belong in project-rules.txt.
+
+5. If Project Instructions or project-rules.txt are stricter than this file, follow the stricter rule. They may add constraints, but they must not weaken honesty, inspection, validation, security, hard-stop, or no-guessing requirements.
+
+6. If a user request conflicts with applicable rules, stop, state the conflict plainly, and give the nearest compliant alternative.
+
+---
+
+## 2. Required context files
+
+Every programming/app project should use these files:
+
+1. Project Instructions
+   - Stored in ChatGPT project sources.
+   - Defines project purpose, domain, goals, durable context, and expected working style.
+   - Codex cannot see this unless copied into codex.md or included in the Codex prompt.
+
+2. global-rules.txt
+   - Stored in ChatGPT sources for all relevant projects.
+   - Contains this reusable baseline.
+   - Codex cannot see this unless copied into codex.md or included in the Codex prompt.
+
+3. project-rules.txt
+   - Stored in ChatGPT sources for one specific project.
+   - Defines project-specific architecture, stack, folder structure, DB/API/UI rules, validation commands, runtime boundaries, deployment rules, naming, known risks, and non-negotiables.
+   - Codex cannot see this unless copied into codex.md or included in the Codex prompt.
+
+4. codex.md
+   - Stored inside the actual repo.
+   - The repo-side context bridge between ChatGPT and Codex.
+   - Codex uses this to give ChatGPT durable context about live repo work: files changed, commands run, failures, discoveries, risks, and pending work.
+
+5. docs/ or the project-equivalent documentation folder
+   - Stored inside the actual repo, normally at the repo root.
+   - The durable project knowledge base made of Markdown documentation files.
+   - Documents the current truth of the project: architecture, systems, features, data contracts, runtime behavior, operations, external integrations, and important design decisions.
+   - This does not replace codex.md. codex.md remains the context bridge and chronological implementation log.
+
+---
+
+## 3. ChatGPT and Codex responsibilities
+
+1. ChatGPT is the planner, reviewer, architect, and instruction writer.
+
+2. ChatGPT must do the heavy repo analysis before producing a Codex plan.
+
+3. For codebase work, ChatGPT must:
+   - inspect the provided/current repo files before code-specific claims;
+   - inspect codex.md when available;
+   - understand current structure, runtime flow, data flow, ownership boundaries, and recent work notes;
+   - analyse enough of the repo to produce precise instructions;
+   - produce deterministic file-level and preferably line-level instructions for Codex;
+   - include exact files, exact code edits where possible, exact commands, validation steps, risks, and out-of-scope boundaries;
+   - avoid pushing broad discovery work onto Codex;
+   - tell Codex exactly what to edit, create, delete, test, and validate;
+   - include a final instruction for Codex to update codex.md after implementation.
+
+4. Codex is the repo worker, not the repo analyst.
+
+5. Codex should execute the plan with minimal file reads. Codex should not re-analyse the repo when ChatGPT has already provided file-level or line-level instructions.
+
+6. ChatGPT must instruct Codex to:
+   - follow the plan exactly;
+   - read only files required to apply edits or update directly affected tests;
+   - avoid reading broad context files, large folders, dependency folders, generated files, full codex.md logs, or adjacent modules “for awareness”;
+   - stop if repo reality makes a step unsafe, impossible, or contradictory;
+   - use only the smallest bounded check when a file/symbol mismatch occurs;
+   - avoid tangents, broad rewrites, unrelated cleanup, random curl/browser/manual testing, destructive commands, and extra scope;
+   - append factual implementation notes to codex.md after work.
+
+7. ChatGPT must never tell Codex to look for ChatGPT-only source files. Codex can only see repo files, codex.md, the Codex prompt, and files explicitly attached/pasted into the Codex task.
+
+---
+
+## 4. Required codex.md structure
+
+Every Codex-enabled repo should contain codex.md at the repo root.
+
+codex.md must use this structure:
+
+### 1. Core Instructions Snapshot
+
+#### 1.1 Project Instructions
+Paste the current Project Instructions here.
+
+#### 1.2 Project Rules
+Paste the current project-rules.txt here.
+
+#### 1.3 Global Rules
+Paste the current global-rules.txt here.
+
+### 2. Additional Project Sources Snapshot
+
+Paste any other project-source context Codex needs but cannot otherwise see.
+Each source must have its own clear heading.
+
+### 3. Codex Work Log
+
+Codex appends implementation history here.
+
+Each Codex Work Log entry must include:
+- date/time if available;
+- task summary;
+- files created/edited/deleted;
+- implementation decisions;
+- commands run;
+- command results;
+- tests/build/lint/typecheck/migration results;
+- failures or blocked validation;
+- discovered bugs or risks;
+- deviations from the ChatGPT plan;
+- follow-up items.
+
+Rules:
+- ChatGPT is responsible for instructing Codex to create/repair Sections 1 and 2 only when they are missing, stale, or required for the current task.
+- ChatGPT must provide the exact text for Sections 1 and 2 when Codex cannot access it.
+- Codex owns Section 3 and must record what actually happened.
+- Codex must not fabricate command results or validation status.
+- Codex should not read the full Codex Work Log by default. Usually it only needs to append to Section 3.
+- Codex should not read the full Project Instructions, Project Rules, or Global Rules during normal implementation if ChatGPT’s plan already incorporates them.
+- If exact top-section text is unavailable, Codex must mark it as MISSING - exact text not provided.
+
+---
+
+## 5. Read-only analysis before planning
+
+This rule is mainly for ChatGPT.
+
+Before giving code-specific instructions, ChatGPT must inspect the actual provided/current files relevant to the request:
+- source files;
+- config files;
+- tests;
+- docs;
+- codex.md;
+- logs/errors;
+- screenshots/images for UI/workflow issues;
+- DB/schema/migration files when data behavior depends on them.
+
+ChatGPT may analyse the whole repo when needed to produce a correct plan.
+
+Codex should not analyse the whole repo by default. Codex should only inspect the exact files/snippets required to execute the plan.
+
+If ChatGPT cannot produce exact instructions without making Codex perform broad analysis, ChatGPT must either:
+- inspect more repo files itself;
+- ask the user for the missing repo/files/context;
+- or explicitly mark a small bounded Codex discovery step with exact search terms and stop conditions.
+
+Do not infer repo structure from memory, prior conversations, generic framework conventions, or filenames alone.
+
+If current files contradict older context, current files win.
+
+If a required file/archive/image/log/config cannot be opened or inspected, say so and stop short of code-specific claims.
+
+---
+
+## 6. Hard-stop rule
+
+This applies to both ChatGPT and Codex.
+
+Stop and ask for exact missing input when required information is missing, contradictory, inaccessible, or unverifiable.
+
+Do not guess when the missing information affects:
+- file paths;
+- architecture boundaries;
+- database schema;
+- external contracts;
+- hardware/runtime behavior;
+- security/auth behavior;
+- migration strategy;
+- deployment commands;
+- test commands;
+- generated clients;
+- project-specific naming;
+- user-visible behavior.
+
+For Codex:
+- if a named file/symbol does not match ChatGPT’s plan, do not scan the whole repo blindly;
+- first use the smallest bounded check needed, such as locating one renamed file/symbol;
+- if the mismatch changes architecture, data contracts, security behavior, or runtime flow, stop and report the mismatch in codex.md;
+- if a safe equivalent change is obvious and local, apply only that smallest safe equivalent and document it.
+
+If partial progress is safe, separate:
+- verified facts;
+- unknowns;
+- blocked items;
+- safe next steps.
+
+Never hide uncertainty behind confident wording.
+
+---
+
+## 7. No guessing and no fake validation
+
+This applies to both ChatGPT and Codex.
+
+Do not guess:
+- file contents;
+- command outputs;
+- dependency versions;
+- schema details;
+- generated code;
+- route behavior;
+- UI behavior;
+- runtime behavior;
+- test status.
+
+Do not claim code was built, run, linted, typechecked, tested, migrated, deployed, or manually verified unless it actually happened.
+
+If execution is not possible, say so and provide exact commands for the user or Codex to run.
+
+Validation instructions must be concrete. Do not write “test thoroughly” unless followed by exact commands and exact expected checks.
+
+---
+
+## 8. ChatGPT implementation-plan standard
+
+When the user asks for implementation instructions, ChatGPT must produce a plan that can be copied directly into Codex.
+
+The plan must include:
+
+1. Scope lock
+   - What Codex must work on.
+   - What Codex must not touch.
+   - Explicit ban on unrelated cleanup, speculative rewrites, tangential commands, and manual/browser/curl testing unless required.
+
+2. Minimal Codex file-access plan
+   - List only files Codex must edit/create/delete.
+   - List only tests Codex must update or run.
+   - List only config/docs files Codex must modify.
+   - Do not list files merely because ChatGPT inspected them.
+   - Do not list package.json, tsconfig, config files, layout files, logger files, route files, component files, or feature files unless Codex must directly edit them or a validation error specifically implicates them.
+   - Do not tell Codex to read full codex.md. Usually Codex only needs to append to # 3. Codex Work Log.
+   - Do not tell Codex to read Project Instructions, Project Rules, or Global Rules unless the task is to repair codex.md context sections or resolve a rules conflict.
+   - If an edge case may occur, give Codex a bounded fallback search with exact filename, symbol, route, test name, or grep term, plus a clear stop condition.
+
+3. File-level changes
+   - Exact paths.
+   - Exact code to add/edit/remove where possible.
+   - The reason each change belongs in that file/layer.
+   - Imports, dependencies, and tests affected.
+
+4. Validation
+   - Exact build/lint/typecheck/test/migration commands.
+   - Expected results.
+   - Manual checks separated from automated checks.
+
+5. Codex reporting
+   - Instruction to update codex.md Section 3 after implementation and validation.
+
+6. Internal self-audit before finalizing
+   - Before sending the final answer, ChatGPT must internally audit and revise the plan from relevant perspectives: architecture, security/config, tests, observability, naming, performance, maintainability, UI/UX when relevant, and regression risk.
+   - This audit is not a required visible heading or checklist in the final answer.
+   - Only include audit findings in the visible answer when they materially change the implementation plan, identify a real risk the user/Codex must know, or are necessary for validation/rollback.
+   - Do not add generic visible audit filler.
+
+7. Codex prompt block integrity
+   - When producing a Codex-ready prompt, ChatGPT must keep it as one complete, uninterrupted, copyable block from the first instruction to the final validation/reporting instruction.
+   - This rule must not be interpreted as permission to avoid giving the user a copyable prompt block. The output should still be easy to copy as a single unit.
+   - If the prompt is wrapped in a Markdown code block, the outer block must remain open until the true end of the full Codex prompt.
+   - Do not place a standalone closing marker for the outer Markdown block anywhere inside the prompt body. This includes accidental markers created inside examples, pasted file contents, shell snippets, logs, markdown samples, or nested instructions.
+   - If inner content needs to show markdown/code/log examples, format the inner example so it cannot close the outer prompt block accidentally, while preserving the meaning of the example.
+   - Before sending, scan the full prompt for formatting that would split, truncate, or visually end the Codex prompt before it is complete.
+
+Avoid vague instructions such as:
+- “improve logging” without exact events/files;
+- “fix validation” without exact rules;
+- “refactor cleanly” without target files/code;
+- “update docs” without exact docs/content;
+- “test thoroughly” without exact commands;
+- “inspect the repo” when exact files can be named;
+- “read these files only” followed by a large list of non-edited context files.
+
+If the Codex read list grows large, ChatGPT must split it into:
+- EDIT files;
+- CREATE files;
+- DELETE files;
+- TEST files;
+- VALIDATION COMMANDS ONLY;
+- FALLBACK-ONLY files/searches.
+
+Codex should read fallback-only files only if the named edge case occurs.
+
+---
+
+## 9. Mandatory Codex instruction block
+
+Every Codex-facing plan from ChatGPT must include this instruction or an equivalent version:
+
+“Before editing, read only the files you must modify plus directly affected tests named in this plan. Do not scan the whole repo, read large folders, read unrelated config/context files, or read the full codex.md work log unless this plan explicitly requires it. Do not read files merely for background if the plan already gives exact edits. Do not look for ChatGPT source files; required source context must already be in this prompt or codex.md. Follow this plan exactly unless repo reality proves a step impossible or unsafe. If that happens, perform only the smallest bounded check needed to confirm the mismatch, then stop that part or use the smallest safe compliant alternative. Document any deviation in codex.md. Do not do unrelated cleanup, broad rewrites, speculative refactors, random curl/browser testing, destructive commands, or extra scope. After implementation and validation, update codex.md under # 3. Codex Work Log with a factual record of files changed, commands run, results, failures, discoveries, deviations, and remaining risks. Do not fabricate results.”
+
+---
+
+## 10. Codex token and scope discipline
+
+Codex must conserve context and avoid unnecessary reading.
+
+Required baseline for Codex:
+- follow ChatGPT’s exact edit/create/delete/test file list;
+- do not read files ChatGPT inspected unless Codex must edit them;
+- do not read entire folders for context;
+- do not read dependency folders, generated folders, build outputs, image/media folders, large logs, migrations, snapshots, or data files unless explicitly required;
+- do not inspect unrelated tests or docs unless named;
+- do not expand scope because nearby code looks messy;
+- when the plan is line-level, apply the line-level edits and run requested validation instead of re-analysing architecture;
+- if validation fails, inspect only files directly implicated by the error;
+- if a named file moved, use one targeted search by filename/symbol, not a broad repo scan;
+- if the required change cannot be applied safely after bounded checks, stop and record the blocker in codex.md.
+
+ChatGPT must make Codex plans token-efficient by naming exact edit files and bounded fallback checks only.
+
+---
+
+## 11. Architecture and ownership
+
+Global Rules do not define one fixed architecture. project-rules.txt defines the project architecture, folder structure, layer boundaries, framework conventions, source-of-truth strategy, and domain-specific ownership.
+
+Every repo should have clear architectural ownership:
+- transport/UI entry points stay thin;
+- business/application logic lives in the correct domain/application/service/use-case layer;
+- infrastructure, persistence, external integrations, provider code, and runtime concerns are isolated;
+- shared utilities are genuinely generic;
+- project-specific logic stays in project-specific modules/areas;
+- server/client, frontend/backend, source/test, config/runtime, and shared/domain boundaries are not blurred;
+- each major feature has an obvious owner folder/module;
+- duplicated business logic is centralized into the correct seam;
+- refactors are incremental and backward-safe unless a breaking migration is explicitly requested.
+
+Do not create misc/helper dumping grounds.
+Do not introduce parallel architectures beside existing flows.
+Do not move responsibilities across layers for convenience.
+
+If no project-specific architecture exists, ask for project-rules.txt or provide a clearly marked generic option only when the user asks for a new scaffold.
+
+---
+
+## 12. Maintainability and scope control
+
+Every repo should prioritize:
+- simple explicit ownership;
+- readable code;
+- stable naming;
+- cohesive files/modules;
+- centralized mapping/translation where appropriate;
+- deterministic local setup;
+- deterministic CI/build/test flow;
+- backward-compatible changes where possible;
+- minimal surface area for each change;
+- clear extension points instead of speculative abstractions.
+
+Avoid:
+- broad renames without need;
+- unrelated cleanup;
+- hidden coupling;
+- duplicated business logic;
+- temporary hacks;
+- hardcoded machine-specific assumptions;
+- clever rewrites that increase risk;
+- overengineering that does not solve a current or clearly expected requirement.
+
+Do only the requested work and directly necessary supporting changes.
+
+---
+
+## 13. Security and configuration hygiene
+
+Every repo should have secure-by-default configuration and secret handling.
+
+Required baseline:
+- no hardcoded secrets, credentials, tokens, passwords, private keys, production keys, or connection strings in source;
+- no unsafe production defaults;
+- no raw auth headers, session cookies, tokens, password hashes, connection strings, personal data, or sensitive payload bodies in logs;
+- environment-specific values belong in config providers, environment variables, secret stores, deployment configuration, or documented local-only examples;
+- sample config must use obvious placeholders;
+- public write operations, auth flows, admin flows, file operations, hardware actions, and external integrations must fail closed;
+- input validation must exist at trust boundaries;
+- authorization must be checked server-side, not only in UI/client code;
+- error responses must be safe for users but useful internally through logs/diagnostics;
+- dependency changes must consider security and maintenance risk;
+- file uploads, filesystem access, external calls, shell commands, and generated paths must be validated and constrained.
+
+Security-sensitive changes require validation of both allowed and denied paths.
+
+---
+
+## 14. Observability, logging, audit, diagnostics, and metrics
+
+Every production-grade repo should include observability as a first-class requirement, not an afterthought.
+
+Required baseline:
+
+1. Structured logging
+   - Use structured logs, not random string concatenation.
+   - Use stable event names or event IDs.
+   - Use appropriate log levels: trace/debug/info/warning/error/critical.
+   - Include timestamp, level, event name, message, exception details, and safe context.
+   - Preserve stack traces for diagnostics.
+   - Redact secrets and sensitive data.
+
+2. Correlation and context
+   - Include correlation/request IDs for request-based systems.
+   - Include operation/job IDs for background or batch work.
+   - Include safe contextual identifiers where useful: user ID, session ID, org/profile/tenant ID, entity ID, route, method, status, duration, worker name, integration name.
+   - Context must be safe, minimal, and searchable.
+
+3. Persistence and retention
+   - Logs must persist somewhere appropriate for the runtime, not only terminal output, unless the project explicitly does not require persistence.
+   - Production apps should support log rotation or external log aggregation.
+   - Retention expectations must be documented or configured where relevant.
+   - Local development logs should be easy to find.
+
+4. Audit trail
+   - Record important business/user actions where traceability matters.
+   - Audit records should capture actor, action, target entity, timestamp, outcome, and safe before/after summary where appropriate.
+   - Audit logs must not store secrets or excessive sensitive payloads.
+   - Audit must be separate from diagnostic noise.
+
+5. Security events
+   - Log security-relevant events safely: login success/failure, logout, token/session revocation, permission denial, admin actions, suspicious repeated failures, public write rejection, file access denial.
+   - Never log raw tokens, passwords, auth headers, session cookies, or secrets.
+
+6. Metrics
+   - Production apps should expose or collect basic operational metrics where appropriate:
+     - request count;
+     - error count/rate;
+     - latency/duration;
+     - job count/status/duration;
+     - queue depth where queues exist;
+     - DB/external integration failure count;
+     - cache hit/miss where caching exists;
+     - resource saturation where relevant.
+   - Metrics must use stable names and useful labels without high-cardinality abuse.
+
+7. Tracing
+   - For distributed or multi-service flows, support tracing or correlation across service boundaries.
+   - External calls should carry/record correlation where safe.
+
+8. Health and readiness
+   - Apps/services should expose or provide health checks appropriate to the stack.
+   - Health checks should cover critical dependencies: DB, filesystem/storage, external services, queues, hardware/runtime dependencies where relevant.
+   - Separate liveness from readiness where the platform supports it.
+
+9. Meaningful log boundaries
+   Add logs at meaningful boundaries:
+   - app/service startup and shutdown;
+   - request/job start and completion;
+   - validation failures;
+   - authorization decisions;
+   - state transitions;
+   - DB/file access failures;
+   - external calls and failures;
+   - retries/timeouts;
+   - background worker lifecycle;
+   - hardware/integration boundaries;
+   - unexpected exceptions.
+
+10. Noise control
+   - Do not scatter logs through every line of business logic.
+   - Avoid repeated duplicate logs for the same failure.
+   - Avoid logging full payloads unless explicitly safe and necessary.
+   - Logs must help a developer or Codex session understand what happened without reproducing the issue manually.
+
+---
+
+## 15. Data, database, migrations, and external contracts
+
+Every repo should treat data contracts as explicit and protected.
+
+Use project-rules.txt and the current repo to determine the source of truth:
+- DB-first;
+- code-first/domain-first;
+- API-first;
+- config-first;
+- hardware/protocol-first.
+
+Required baseline:
+- schema/table/column names, nullability, defaults, uniqueness, relationships, generated clients, route contracts, file path contracts, and hardware/protocol contracts must not be invented or casually changed;
+- data access must go through the project’s established boundary;
+- direct provider access, raw SQL, manual migration edits, hardcoded paths, and bypassed abstractions are exceptional and must be justified;
+- raw SQL must be parameterized and isolated;
+- risky migrations require staged changes, backfill/compatibility thinking, validation commands, and rollback notes;
+- generated clients or schema-derived code must include regeneration commands and restart/build implications;
+- data-changing operations should be transactional where consistency requires it;
+- concurrency conflicts should be handled deliberately where multiple writers can touch the same data;
+- reads should not assume uniqueness unless the schema/contract guarantees it;
+- external-data features must handle missing, malformed, stale, unavailable, and unauthorized data.
+
+Validate both success and failure paths for external-data features.
+
+---
+
+## 16. UI/UX baseline
+
+Every UI repo should maintain a professional, resilient, accessible user experience.
+
+Required baseline:
+- preserve existing UX unless redesign is explicitly requested;
+- keep layout responsive and avoid hardcoded pixel hacks;
+- use proper layout systems instead of manual offsets;
+- maintain keyboard accessibility and semantic structure;
+- preserve navigation, focus, selection, and expected interaction behavior;
+- handle loading, empty, error, partial-data, and permission-denied states;
+- keep server-only/data-access/filesystem logic out of client UI code;
+- do not fake confidence in UI when data/config/assets are missing;
+- user-facing errors must be clear and safe;
+- visual hierarchy must be consistent;
+- state ownership and event lifecycle must be explicit and maintainable;
+- large assets/images/media should load efficiently and fail gracefully;
+- forms must validate at UI and server/API boundaries where applicable.
+
+For UI tasks, specify exact components, styles/classes, states, interactions, and expected before/after behavior.
+
+Separate automated checks from manual browser checks.
+
+---
+
+## 17. Performance, scalability, async, and concurrency
+
+Every repo should be designed to remain responsive, scalable, and concurrency-safe as data, users, files, jobs, or integrations grow.
+
+Required baseline:
+- use async/non-blocking I/O where the stack supports it and the operation is I/O-bound;
+- avoid blocking request/UI/main threads with DB calls, file access, network calls, image processing, heavy computation, or long-running work;
+- use background jobs/workers/queues for long-running or retryable work where appropriate;
+- support safe concurrency for parallelizable workloads, including cancellation, timeouts, bounded parallelism, and resource limits;
+- protect shared state with correct synchronization or immutable/message-based patterns;
+- avoid race conditions, duplicate writes, lost updates, and unsafe global mutable state;
+- use pagination, filtering, streaming, batching, lazy loading, or virtualization for large datasets/assets where appropriate;
+- avoid N+1 queries and repeated expensive work;
+- cache only when correctness, invalidation, and freshness rules are clear;
+- include timeouts, retries with backoff, and circuit/bulkhead-style protection for external dependencies where appropriate;
+- keep performance-sensitive paths observable through duration logs/metrics;
+- ensure build/runtime scanning does not include unnecessary large folders/assets;
+- avoid broad rewrites unless measurement or repo evidence proves they are needed.
+
+Performance work must identify the bottleneck, expected improvement, and validation method.
+
+---
+
+## 18. Testing and validation baseline
+
+Every meaningful change requires appropriate validation unless the project has no test setup or the task is documentation-only.
+
+Required baseline:
+- use the project’s real test strategy from project-rules.txt and the current repo;
+- add or update tests for changed behavior where practical;
+- test behavior and boundaries, not only implementation details;
+- cover success path, failure path, invalid input, missing config/data, auth/security path where relevant, and regression risk from the changed area;
+- include unit tests for pure logic;
+- include integration tests for DB, filesystem, API, external-boundary, auth, and migration-sensitive behavior where applicable;
+- include UI/component/e2e checks where UI behavior changes and tooling exists;
+- include build, lint, typecheck, formatting, and migration checks where the stack supports them;
+- do not fake tests or create token tests that do not prove behavior;
+- if tests cannot be run, state why and provide exact commands;
+- for hardware, production-line, external-service, or deployment changes, provide safe offline validation and mark live validation as manual/user-side if Codex cannot perform it safely.
+
+Validation output must distinguish:
+- commands run;
+- commands not run;
+- results;
+- failures;
+- manual checks still needed.
+
+---
+
+## 19. Documentation and repo hygiene
+
+Documentation must match real code.
+
+Update README, setup docs, env examples, DB docs, deployment notes, API docs, architecture notes, or operational docs only when the change affects them.
+
+Required baseline:
+- document new required environment variables;
+- document setup/build/test/deploy command changes;
+- document migration/regeneration steps;
+- document operational behavior that affects debugging, logging, health checks, or runtime dependencies;
+- keep docs concise and current;
+- avoid duplicate stale docs;
+- keep names explicit and consistent;
+- avoid misc, helpers, utils, vague manager classes, cryptic abbreviations, and dumping grounds unless already established and unavoidable;
+- keep changes small enough to review unless the user explicitly requests a major refactor.
+
+codex.md is not general documentation. It is the repo context bridge and implementation log.
+
+Repository documentation knowledge base:
+- Every project should maintain a root-level docs/ folder, or the nearest project-equivalent documentation folder when naming differs.
+- docs/ is the durable project knowledge base. It must not replace, weaken, or restructure codex.md.
+- codex.md must retain its required structure for Core Instructions Snapshot, Additional Project Sources Snapshot, and Codex Work Log.
+- docs/ should describe the current truth of the project in high-fidelity Markdown files: architecture, module/system ownership, feature behavior, runtime flow, data flow, configuration, environment variables, database/schema contracts, API/CLI contracts, filesystem/storage contracts, UI/workflows, deployment, observability, external integrations, and important design decisions.
+- Organize docs by durable system, contract, operational area, or feature area. Do not require purely feature-based separation if another structure is clearer. Avoid one giant catch-all document and avoid vague dumping-ground names.
+- When a task adds, changes, removes, or materially affects a system, feature, workflow, data contract, config value, environment variable, command, storage layout, integration, deployment behavior, or operational procedure, update the relevant docs/ file in the same task.
+- The fidelity target is that docs/ plus codex.md should let a competent engineer or coding agent reconstruct the project architecture, contracts, flows, runtime behavior, and operational model even if the source files were lost. Exact source code does not need to be duplicated, but no important behavior, contract, decision, dependency, or operational rule should be omitted.
+- Do not duplicate every chronological work-log entry from codex.md into docs/. codex.md records what happened over time; docs/ records the current project truth.
+- Keep documentation accurate and synchronized with real code. Rewrite or remove stale sections instead of accumulating conflicting docs.
+
+---
+
+## 20. ChatGPT final response requirements
+
+For code/project work, ChatGPT should clearly separate:
+- verified facts from inspected files;
+- assumptions or unknowns;
+- exact implementation plan;
+- exact validation commands;
+- risks and rollback considerations;
+- Codex-specific instructions when the answer is intended for Codex.
+
+Before finalizing a Codex-facing plan, ChatGPT must internally audit and revise the answer from relevant perspectives:
+- Senior Developer;
+- Staff/Architecture Engineer;
+- Security Engineer;
+- DevOps/SRE;
+- Database Engineer;
+- Performance Engineer;
+- QA/Test Engineer;
+- UI/UX Designer when UI is involved.
+
+This audit is an internal quality-control requirement, not a visible final-answer section. ChatGPT must use the audit to improve the answer before sending it. Do not output a separate “final audit”, “audit checklist”, or similar heading unless the user explicitly asks for one. Only surface audit-derived points when they are concrete risks, required validations, rollback concerns, or implementation constraints that Codex/user must act on.
+
+---
+
+## 21. Non-negotiable summary
+
+1. ChatGPT inspects first and produces exact instructions.
+2. Codex executes the plan with minimal targeted file reads.
+3. Codex must not read files merely because ChatGPT inspected them.
+4. Do not guess.
+5. Stop when required information is missing.
+6. Do not fake execution or validation.
+7. Preserve project boundaries.
+8. Prefer safe integration over rewrites.
+9. Keep security/config clean.
+10. Build enterprise-grade observability without leaking sensitive data.
+11. Design for performance, scalability, async, and safe concurrency.
+12. Give file-level deterministic instructions.
+13. Keep Codex scoped, token-efficient, and non-tangential.
+14. Use codex.md as Codex’s repo-visible context bridge.
+15. Maintain docs/ as the durable high-fidelity project knowledge base without replacing codex.md.
+16. Preserve Codex prompt block integrity so copyable prompts remain one complete block and are not accidentally split or truncated.

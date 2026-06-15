@@ -1,0 +1,347 @@
+version: 1
+
+sources:
+  apt:
+    title: Apt
+
+    ubuntu:
+      title: Ubuntu Apt
+      software:
+        - id: git
+          title: Git
+          packages: [git]
+          categories: [programming]
+          provides: [git]
+
+        - id: python-toolchain
+          title: Python Toolchain
+          packages: [python3, python3-pip, python3-venv, python-is-python3, pipx]
+          categories: [programming]
+          provides: [python3, python, pipx]
+          post_install:
+            - pipx_ensurepath
+
+        - id: openssh-client
+          title: OpenSSH Client
+          packages: [openssh-client]
+          categories: [terminal]
+          provides: [ssh, scp, sftp]
+
+        - id: build-essential
+          title: Build Essential
+          packages: [build-essential]
+          categories: [programming]
+          provides: [gcc, g++, make]
+
+        - id: obs-studio
+          title: OBS Studio
+          packages: [obs-studio]
+          categories: [media]
+          enable_components: [universe]
+          provides: [obs]
+
+        - id: steam
+          title: Steam
+          package_candidates: [steam, steam-installer]
+          categories: [gaming]
+          architectures: [amd64]
+          enable_components: [multiverse]
+          foreign_architectures: [i386]
+          provides: [steam]
+
+        - id: wine
+          title: Wine
+          packages: [wine, winetricks]
+          categories: [compatibility, gaming]
+          architectures: [amd64]
+          enable_components: [multiverse]
+          foreign_architectures: [i386]
+          provides: [wine, winetricks]
+
+        - id: tor-browser-launcher
+          title: Tor Browser Launcher
+          packages: [torbrowser-launcher]
+          categories: [browsers, privacy]
+          enable_components: [universe]
+          provides: [torbrowser-launcher]
+
+        - id: aravis-tools
+          title: Aravis Tools
+          packages: [aravis-tools]
+          categories: [camera]
+          provides: [arv-tool-0.8]
+
+        - id: go
+          title: Go
+          packages: [golang-go]
+          categories: [programming]
+          provides: [go]
+
+        - id: maven
+          title: Maven
+          packages: [maven]
+          categories: [programming]
+          provides: [mvn]
+
+        - id: blender
+          title: Blender
+          packages: [blender]
+          categories: [creative, media]
+          provides: [blender]
+
+        - id: dotnet-sdk
+          title: .NET SDK
+          packages: [dotnet-sdk-10.0]
+          resolver: dotnet_lts
+          categories: [programming]
+          provides: [dotnet]
+
+    external:
+      title: External Apt
+      software:
+        - id: microsoft-edge
+          title: Microsoft Edge
+          packages: [microsoft-edge-stable]
+          categories: [browsers]
+          architectures: [amd64]
+          key:
+            url: https://packages.microsoft.com/keys/microsoft.asc
+            keyring: /usr/share/keyrings/packages.microsoft.gpg
+            dearmor: true
+          source:
+            file: /etc/apt/sources.list.d/microsoft-edge.list
+            content: |
+              deb [arch={arch} signed-by=/usr/share/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/edge stable main
+          provides: [microsoft-edge]
+
+        - id: visual-studio-code
+          title: Visual Studio Code
+          packages: [code]
+          categories: [ides, programming]
+          architectures: [amd64, arm64, armhf]
+          key:
+            url: https://packages.microsoft.com/keys/microsoft.asc
+            keyring: /usr/share/keyrings/packages.microsoft.gpg
+            dearmor: true
+          source:
+            file: /etc/apt/sources.list.d/vscode.list
+            content: |
+              deb [arch={arch} signed-by=/usr/share/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main
+          provides: [code]
+
+        - id: dropbox
+          title: Dropbox
+          packages: [python3-gpg, dropbox]
+          categories: [cloud_storage]
+          architectures: [amd64]
+          key:
+            url: https://linux.dropbox.com/fedora/rpm-public-key.asc
+            keyring: /etc/apt/keyrings/dropbox.gpg
+            dearmor: true
+          source:
+            file: /etc/apt/sources.list.d/dropbox.list
+            content: |
+              deb [arch=amd64 signed-by=/etc/apt/keyrings/dropbox.gpg] https://linux.dropbox.com/ubuntu {codename} main
+          provides: [dropbox]
+
+        - id: dart
+          title: Dart SDK
+          packages: [dart]
+          categories: [programming]
+          architectures: [amd64]
+          key:
+            url: https://dl-ssl.google.com/linux/linux_signing_key.pub
+            keyring: /usr/share/keyrings/dart.gpg
+            dearmor: true
+          source:
+            file: /etc/apt/sources.list.d/dart_stable.list
+            content: |
+              deb [arch=amd64 signed-by=/usr/share/keyrings/dart.gpg] https://storage.googleapis.com/download.dartlang.org/linux/debian stable main
+          provides: [dart]
+
+        - id: beekeeper-studio
+          title: Beekeeper Studio
+          packages: [beekeeper-studio]
+          categories: [database, productivity]
+          architectures: [amd64]
+          key:
+            url: https://deb.beekeeperstudio.io/beekeeper.key
+            keyring: /etc/apt/keyrings/beekeeper-studio.gpg
+            dearmor: true
+          source:
+            file: /etc/apt/sources.list.d/beekeeper-studio.list
+            content: |
+              deb [signed-by=/etc/apt/keyrings/beekeeper-studio.gpg] https://deb.beekeeperstudio.io stable main
+          provides: [beekeeper-studio]
+
+        - id: sublime-text
+          title: Sublime Text
+          packages: [sublime-text]
+          categories: [editors, programming]
+          architectures: [amd64, arm64]
+          key:
+            url: https://download.sublimetext.com/sublimehq-pub.gpg
+            keyring: /etc/apt/keyrings/sublimehq-pub.gpg
+            dearmor: true
+          source:
+            file: /etc/apt/sources.list.d/sublime-text.list
+            content: |
+              deb [arch={arch} signed-by=/etc/apt/keyrings/sublimehq-pub.gpg] https://download.sublimetext.com/ apt/stable/
+          provides: [subl]
+
+        - id: warp
+          title: Warp
+          packages: [warp-terminal]
+          categories: [terminal, programming]
+          architectures: [amd64, arm64]
+          key:
+            url: https://releases.warp.dev/linux/keys/warp.asc
+            keyring: /etc/apt/keyrings/warpdotdev.gpg
+            dearmor: true
+          source:
+            file: /etc/apt/sources.list.d/warpdotdev.list
+            content: |
+              deb [arch={arch} signed-by=/etc/apt/keyrings/warpdotdev.gpg] https://releases.warp.dev/linux/deb stable main
+          provides: [warp-terminal]
+
+        - id: crystal
+          title: Crystal
+          packages: [crystal]
+          categories: [programming]
+          architectures: [amd64]
+          key:
+            url: https://packagecloud.io/84codes/crystal/gpgkey
+            keyring: /etc/apt/keyrings/crystal.gpg
+            dearmor: true
+          source:
+            file: /etc/apt/sources.list.d/crystal.list
+            content: |
+              deb [signed-by=/etc/apt/keyrings/crystal.gpg] https://packagecloud.io/84codes/crystal/ubuntu/ {codename} main
+          provides: [crystal]
+
+  nvm:
+    title: NVM
+    software:
+      - id: nodejs
+        title: Node.js LTS
+        package: node-lts
+        categories: [programming]
+        install_url: https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.5/install.sh
+        node_version: --lts
+        provides: [node, npm, npx]
+
+  npm:
+    title: NPM
+    software:
+      - id: codex
+        title: OpenAI Codex CLI
+        package: "@openai/codex"
+        categories: [programming, ai]
+        depends_on: [nodejs]
+        provides: [codex]
+
+  rustup:
+    title: Rustup
+    software:
+      - id: rust
+        title: Rust
+        package: stable
+        categories: [programming]
+        components: [rustfmt, clippy]
+        provides: [rustc, cargo, rustup]
+
+  snap:
+    title: Snap
+    software:
+      - id: teams-for-linux
+        title: Microsoft Teams Wrapper
+        package: teams-for-linux
+        categories: [communication]
+        provides: [teams-for-linux]
+
+      - id: whatsapp-desktop
+        title: WhatsApp Desktop Wrapper
+        package: whatsapp-desktop-client
+        categories: [communication]
+        provides: [whatsapp-desktop-client]
+
+      - id: notion-desktop
+        title: Notion Desktop Wrapper
+        package: notion-desktop
+        categories: [productivity]
+        provides: [notion-desktop]
+
+      - id: proton-mail
+        title: Proton Mail
+        package: proton-mail
+        categories: [communication, privacy]
+        provides: [proton-mail]
+
+      - id: outlook-wrapper
+        title: Outlook Wrapper
+        package: outlook-ew
+        categories: [communication]
+        provides: [outlook-ew]
+
+  flatpak:
+    title: Flatpak
+    software:
+      - id: bottles
+        title: Bottles
+        package: com.usebottles.bottles
+        categories: [compatibility, gaming]
+        provides: [com.usebottles.bottles]
+
+  vendor_download:
+    title: Vendor Downloads
+    software:
+      - id: flutter
+        title: Flutter SDK
+        categories: [programming, mobile]
+        method: flutter_sdk
+        provides: [flutter, dart]
+
+      - id: swiftly
+        title: Swiftly
+        categories: [programming]
+        method: swiftly
+        provides: [swiftly, swift]
+
+      - id: android-studio
+        title: Android Studio
+        categories: [ides, mobile]
+        method: android_studio_latest
+        provides: [studio]
+
+      - id: android-sdk-command-line-tools
+        title: Android SDK Command-line Tools
+        categories: [programming, mobile]
+        method: android_sdk_command_line_tools
+        provides: [sdkmanager, avdmanager]
+
+      - id: android-platform-tools
+        title: Android Platform Tools
+        categories: [programming, mobile]
+        method: android_platform_tools
+        depends_on: [android-sdk-command-line-tools]
+        provides: [adb, fastboot]
+
+      - id: android-ndk
+        title: Android NDK
+        categories: [programming, mobile]
+        method: android_ndk
+        depends_on: [android-sdk-command-line-tools]
+        sdk_package: ndk;latest
+        provides: [ndk-build]
+
+      - id: godot
+        title: Godot
+        categories: [game_dev]
+        method: godot_latest
+        provides: [godot]
+
+      - id: chromedriver
+        title: ChromeDriver
+        categories: [programming, browsers, automation]
+        method: chromedriver_latest
+        provides: [chromedriver]
