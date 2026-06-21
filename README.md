@@ -4,8 +4,11 @@
 software catalog from `config/software.yaml`, builds an install plan, and runs
 normal Ubuntu package-manager or vendor commands through Python subprocesses.
 
-The default behavior is intentionally simple: run the app with no filters and it
-installs every enabled item in the catalog.
+The default behavior is intentionally interactive: run the app with no filters
+and it opens a terminal checklist with every enabled catalog item already
+checked. Uncheck anything you do not want in that run, then continue.
+If selected software declares dependencies, those dependencies may still be
+added to the final install plan.
 
 ## Supported Target
 
@@ -13,6 +16,8 @@ installs every enabled item in the catalog.
 - Best-supported path: Ubuntu 22.04 and newer on `amd64`
 - `--list` works on any host
 - `--dry-run` can be used off Ubuntu to inspect planned commands
+- Headless, CI, redirected, or otherwise non-interactive install and dry-run
+  commands must pass `--yes`
 
 ## Usage
 
@@ -22,7 +27,7 @@ List everything that would be installed:
 ./ubuntu-setup --list
 ```
 
-Install everything:
+Install with the interactive checklist:
 
 ```bash
 ./ubuntu-setup
@@ -31,7 +36,13 @@ Install everything:
 Preview commands without changing the system:
 
 ```bash
-./ubuntu-setup --dry-run
+./ubuntu-setup --yes --dry-run
+```
+
+Run without the checklist for automation:
+
+```bash
+./ubuntu-setup --yes
 ```
 
 Install by category:
@@ -60,6 +71,21 @@ Comma-separated filters also work:
 ./ubuntu-setup --only git,nodejs,codex
 ```
 
+Install filters first narrow the checklist. For example,
+`./ubuntu-setup --category programming` shows only matching programming tools,
+all checked by default. Use `--yes` with filters to run immediately without the
+checklist. Items are grouped under their first configured category; any
+additional categories appear on the same row.
+
+Checklist controls:
+
+- Up/Down or `j`/`k`: move
+- Space: toggle an item
+- `a`: select all
+- `n`: select none
+- Enter: continue
+- `q` or Esc: cancel
+
 ## Structure
 
 ```text
@@ -75,6 +101,7 @@ config/
 runtime/
   catalog.py
   categories.py
+  selector.py
   sources.py
   planner.py
   runner.py

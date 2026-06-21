@@ -22,11 +22,13 @@ def main(argv: Sequence[str] | None = None) -> int:
 
 def _main(argv: Sequence[str] | None = None) -> int:
     args = _parse_args(argv)
+    if _requires_interactive_selector(args) and (not sys.stdin.isatty() or not sys.stdout.isatty()):
+        raise RuntimeError("Interactive selector requires a terminal. Re-run interactively or pass --yes to install without selection.")
     _ensure_yaml_dependency(args.dry_run)
 
     from runtime.catalog import load_catalog, load_categories
     from runtime.categories import validate_item_categories
-    from runtime.planner import build_plan
+    from runtime.planner import build_plan, filter_candidates
     from runtime.runner import RuntimeContext, run_plan
     from runtime.sources import load_source_order, load_source_titles
     from system.logging import configure_logging
@@ -44,17 +46,51 @@ def _main(argv: Sequence[str] | None = None) -> int:
     requested_ids = _split_many(args.only)
     _validate_requested_categories(requested_categories, categories)
 
-    plan = build_plan(
+    if args.list:
+        plan = build_plan(
+            catalog,
+            source_order,
+            categories=requested_categories,
+            sources=requested_sources,
+            only=requested_ids,
+        )
+        _print_plan(plan, source_titles)
+        return 0
+
+    candidate_items = filter_candidates(
         catalog,
-        source_order,
         categories=requested_categories,
         sources=requested_sources,
         only=requested_ids,
     )
-
-    if args.list:
-        _print_plan(plan, source_titles)
+    if not candidate_items:
+        print("[INFO] No software matched the requested filters.")
         return 0
+
+    if args.yes:
+        plan = build_plan(
+            catalog,
+            source_order,
+            categories=requested_categories,
+            sources=requested_sources,
+            only=requested_ids,
+        )
+    else:
+        try:
+            from runtime.selector import SelectionCancelled, select_software
+        except ModuleNotFoundError as exc:
+            if exc.name == "curses":
+                raise RuntimeError("Interactive selector requires Python curses support. Install python3-curses or pass --yes to install without selection.") from exc
+            raise
+        try:
+            selected_ids = select_software(candidate_items, categories)
+        except SelectionCancelled:
+            print("[INFO] Installation cancelled.")
+            return 130
+        if not selected_ids:
+            print("[INFO] No software selected.")
+            return 0
+        plan = build_plan(catalog, source_order, only=selected_ids)
 
     if not plan.items:
         print("[INFO] No software matched the requested filters.")
@@ -87,7 +123,12 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
     parser.add_argument("--category", action="append", default=[], help="install/list software from a category")
     parser.add_argument("--source", action="append", default=[], help="install/list software from a source such as apt.ubuntu")
     parser.add_argument("--only", action="append", default=[], help="install/list one software id")
+    parser.add_argument("--yes", action="store_true", help="skip the interactive checklist and install all matching software")
     return parser.parse_args(argv)
+
+
+def _requires_interactive_selector(args: argparse.Namespace) -> bool:
+    return not args.list and not args.yes
 
 
 def _ensure_yaml_dependency(dry_run: bool) -> None:

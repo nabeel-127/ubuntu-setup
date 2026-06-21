@@ -6,6 +6,8 @@
   Docker Compose as the Compose v2 apt plugin.
 - Added external apt conflict removal support for packages such as old distro
   Docker packages before installing vendor packages.
+- Added the default terminal checklist flow before installs, with `--yes` as
+  the explicit non-interactive bypass.
 - Removed Microsoft Teams Wrapper and Outlook Wrapper from the Snap catalog.
 - Moved OpenAI Codex CLI from npm to the official standalone installer under
   vendor downloads.

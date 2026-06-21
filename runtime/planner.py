@@ -33,6 +33,22 @@ def build_plan(
     sources: list[str] | None = None,
     only: list[str] | None = None,
 ) -> InstallPlan:
+    selected = filter_candidates(
+        catalog,
+        categories=categories,
+        sources=sources,
+        only=only,
+    )
+
+    return InstallPlan(tuple(_with_dependencies(selected, catalog)), tuple(source_order))
+
+
+def filter_candidates(
+    catalog: Catalog,
+    categories: list[str] | None = None,
+    sources: list[str] | None = None,
+    only: list[str] | None = None,
+) -> list[SoftwareItem]:
     selected = [item for item in catalog.items if item.enabled]
 
     if only:
@@ -59,7 +75,7 @@ def build_plan(
             raise ValueError(f"Unknown sources: {', '.join(sorted(missing_sources))}")
         selected = [item for item in selected if item.source in requested_sources]
 
-    return InstallPlan(tuple(_with_dependencies(selected, catalog)), tuple(source_order))
+    return selected
 
 
 def _with_dependencies(items: list[SoftwareItem], catalog: Catalog) -> list[SoftwareItem]:

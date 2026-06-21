@@ -11,6 +11,7 @@ ubuntu-setup
   -> bootstrap.main()
       -> config/*.yaml
       -> runtime.catalog
+      -> runtime.selector
       -> runtime.planner
       -> runtime.runner
           -> system.packages.*
@@ -39,6 +40,7 @@ config/
 runtime/
   catalog.py
   categories.py
+  selector.py
   sources.py
   planner.py
   runner.py
@@ -75,7 +77,7 @@ tests/
 | `main.py` | Thin executable entrypoint. |
 | `bootstrap.py` | CLI parsing, YAML bootstrap, config loading, host detection, and handoff. |
 | `config/` | Declarative source, category, logging, and software data. |
-| `runtime/` | Catalog validation, category/source filtering, dependency expansion, and plan execution order. |
+| `runtime/` | Catalog validation, terminal software selection, category/source filtering, dependency expansion, and plan execution order. |
 | `system/` | Ubuntu detection, sudo handling, command execution, profile updates, and package source adapters. |
 | `docs/` | Durable project notes. |
 | `tests/` | Smoke and validation checks. |
@@ -111,8 +113,22 @@ Optional fields include:
 - `depends_on`
 - source-specific repository or installer metadata
 
-Categories are config labels only. The code loads category names from
-`config/categories.yaml` and does not hardcode category behavior.
+Categories are config labels. The code loads category names from
+`config/categories.yaml` and does not hardcode category behavior. The first
+category on a software item is used as its primary category for checklist
+grouping; additional categories remain labels and are shown alongside the item.
+
+## Interactive Selection
+
+Install runs open a terminal checklist by default. The checklist reads enabled
+items from `config/software.yaml`, groups them by category title from
+`config/categories.yaml`, and returns selected software ids for the current run
+only. It does not edit config files. Dependency expansion still happens after
+selection, so dependencies of selected software may be added to the final plan.
+
+`--list` remains non-interactive. `--yes` bypasses the checklist and preserves
+the immediate install path for scripts and other non-interactive runs. Any
+install or dry-run command without an interactive terminal must pass `--yes`.
 
 ## Naming Rules
 

@@ -57,7 +57,8 @@ for path in paths:
     compile(path.read_text(encoding="utf-8"), str(path), "exec")
 PY
 
-PYTHONDONTWRITEBYTECODE=1 ./ubuntu-setup --help >/dev/null
+help_output="$(PYTHONDONTWRITEBYTECODE=1 ./ubuntu-setup --help)"
+assert_output_contains "$help_output" "--yes" "--help output"
 PYTHONDONTWRITEBYTECODE=1 ./ubuntu-setup --list >/dev/null
 PYTHONDONTWRITEBYTECODE=1 ./ubuntu-setup --list --source apt.ubuntu >/dev/null
 PYTHONDONTWRITEBYTECODE=1 ./ubuntu-setup --list --source npm >/dev/null
@@ -69,11 +70,151 @@ PYTHONDONTWRITEBYTECODE=1 ./ubuntu-setup --list --only discord >/dev/null
 PYTHONDONTWRITEBYTECODE=1 ./ubuntu-setup --list --only docker >/dev/null
 PYTHONDONTWRITEBYTECODE=1 ./ubuntu-setup --list --only android-studio >/dev/null
 
-PYTHONDONTWRITEBYTECODE=1 ./ubuntu-setup --dry-run --only git >/dev/null
-docker_dry_run="$(PYTHONDONTWRITEBYTECODE=1 ./ubuntu-setup --dry-run --only docker)"
+PYTHONDONTWRITEBYTECODE=1 python3 - <<'PY'
+import builtins
+import contextlib
+import io
+
+import bootstrap
+
+real_import = builtins.__import__
+
+
+def blocked_import(name, *args, **kwargs):
+    if name == "curses":
+        raise ModuleNotFoundError("No module named curses", name="curses")
+    return real_import(name, *args, **kwargs)
+
+
+builtins.__import__ = blocked_import
+stdout = io.StringIO()
+try:
+    with contextlib.redirect_stdout(stdout):
+        code = bootstrap.main(["--list", "--only", "git"])
+finally:
+    builtins.__import__ = real_import
+
+assert code == 0
+assert "Git [git]" in stdout.getvalue()
+PY
+
+PYTHONDONTWRITEBYTECODE=1 python3 - <<'PY'
+import contextlib
+import importlib
+import io
+
+import bootstrap
+
+real_import_module = importlib.import_module
+
+
+def blocked_import_module(name, *args, **kwargs):
+    if name == "yaml":
+        raise AssertionError("YAML bootstrap ran before the non-TTY selector guard")
+    return real_import_module(name, *args, **kwargs)
+
+
+importlib.import_module = blocked_import_module
+stderr = io.StringIO()
+try:
+    with contextlib.redirect_stderr(stderr):
+        code = bootstrap.main(["--only", "git"])
+finally:
+    importlib.import_module = real_import_module
+
+assert code == 1
+assert "Interactive selector requires a terminal" in stderr.getvalue()
+PY
+
+if output="$(PYTHONDONTWRITEBYTECODE=1 ./ubuntu-setup --dry-run --only git 2>&1)"; then
+    printf 'Expected non-interactive install without --yes to fail.\nOutput:\n%s\n' "$output" >&2
+    exit 1
+fi
+assert_output_contains "$output" "Interactive selector requires a terminal" "non-interactive install output"
+
+PYTHONDONTWRITEBYTECODE=1 ./ubuntu-setup --yes --dry-run --only git >/dev/null
+docker_dry_run="$(PYTHONDONTWRITEBYTECODE=1 ./ubuntu-setup --yes --dry-run --only docker)"
 assert_output_contains "$docker_dry_run" "/etc/apt/sources.list.d/docker.sources" "--dry-run --only docker output"
 assert_output_contains "$docker_dry_run" "apt remove -y docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc" "--dry-run --only docker output"
 assert_output_contains "$docker_dry_run" "docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin" "--dry-run --only docker output"
+
+PYTHONDONTWRITEBYTECODE=1 python3 - <<'PY'
+import os
+import pty
+import select
+import subprocess
+import time
+
+
+def run_pty(keys: bytes) -> tuple[int, str]:
+    master, slave = pty.openpty()
+    env = os.environ.copy()
+    env["PYTHONDONTWRITEBYTECODE"] = "1"
+    env["TERM"] = "xterm"
+    process = subprocess.Popen(
+        ["./ubuntu-setup", "--dry-run", "--only", "git"],
+        stdin=slave,
+        stdout=slave,
+        stderr=slave,
+        close_fds=True,
+        env=env,
+    )
+    os.close(slave)
+    os.write(master, keys)
+    output = bytearray()
+    deadline = time.monotonic() + 15
+    try:
+        while process.poll() is None and time.monotonic() < deadline:
+            readable, _, _ = select.select([master], [], [], 0.1)
+            if readable:
+                try:
+                    output.extend(os.read(master, 4096))
+                except OSError:
+                    break
+        if process.poll() is None:
+            process.kill()
+            raise AssertionError("interactive selector test timed out")
+        while True:
+            readable, _, _ = select.select([master], [], [], 0)
+            if not readable:
+                break
+            try:
+                chunk = os.read(master, 4096)
+            except OSError:
+                break
+            if not chunk:
+                break
+            output.extend(chunk)
+    finally:
+        os.close(master)
+    return process.returncode, output.decode(errors="replace")
+
+
+code, output = run_pty(b"\n")
+assert code == 0, output
+assert "Installing Git: git" in output, output
+
+code, output = run_pty(b"q")
+assert code == 130, output
+assert "Installation cancelled" in output, output
+
+code, output = run_pty(b"n\n")
+assert code == 0, output
+assert "No software selected" in output, output
+PY
+
+PYTHONDONTWRITEBYTECODE=1 python3 - <<'PY'
+from pathlib import Path
+
+from runtime.catalog import load_catalog
+from runtime.planner import filter_candidates
+
+catalog = load_catalog(Path("config/software.yaml"))
+
+assert [item.id for item in filter_candidates(catalog, only=["git"])] == ["git"]
+assert [item.id for item in filter_candidates(catalog, sources=["deb"])] == ["discord"]
+assert "docker" in [item.id for item in filter_candidates(catalog, categories=["programming"])]
+PY
 
 mapfile -t catalog_ids < <(
     PYTHONDONTWRITEBYTECODE=1 python3 - <<'PY'
