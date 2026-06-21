@@ -56,4 +56,17 @@ def _prepare_system(context: RuntimeContext) -> None:
     command = context.command
     command.ensure_sudo()
     command.run(["apt", "update"], sudo=True)
-    command.run(["apt", "install", "-y", *BASE_APT_PACKAGES], sudo=True)
+    missing = [package for package in BASE_APT_PACKAGES if not _package_installed(package, context)]
+    if not missing:
+        command.info("Base apt packages already installed")
+        return
+    command.run(["apt", "install", "-y", *missing], sudo=True)
+
+
+def _package_installed(package: str, context: RuntimeContext) -> bool:
+    result = context.command.run(
+        ["dpkg-query", "-W", "-f=${Status}", package],
+        capture=True,
+        check=False,
+    )
+    return result.returncode == 0 and "install ok installed" in result.stdout

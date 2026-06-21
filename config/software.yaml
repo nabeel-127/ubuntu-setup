@@ -71,18 +71,6 @@ sources:
           categories: [camera]
           provides: [arv-tool-0.8]
 
-        - id: go
-          title: Go
-          packages: [golang-go]
-          categories: [programming]
-          provides: [go]
-
-        - id: maven
-          title: Maven
-          packages: [maven]
-          categories: [programming]
-          provides: [mvn]
-
         - id: blender
           title: Blender
           packages: [blender]
@@ -144,21 +132,6 @@ sources:
               deb [arch=amd64 signed-by=/etc/apt/keyrings/dropbox.gpg] https://linux.dropbox.com/ubuntu {codename} main
           provides: [dropbox]
 
-        - id: dart
-          title: Dart SDK
-          packages: [dart]
-          categories: [programming]
-          architectures: [amd64]
-          key:
-            url: https://dl-ssl.google.com/linux/linux_signing_key.pub
-            keyring: /usr/share/keyrings/dart.gpg
-            dearmor: true
-          source:
-            file: /etc/apt/sources.list.d/dart_stable.list
-            content: |
-              deb [arch=amd64 signed-by=/usr/share/keyrings/dart.gpg] https://storage.googleapis.com/download.dartlang.org/linux/debian stable main
-          provides: [dart]
-
         - id: beekeeper-studio
           title: Beekeeper Studio
           packages: [beekeeper-studio]
@@ -204,20 +177,26 @@ sources:
               deb [arch={arch} signed-by=/etc/apt/keyrings/warpdotdev.gpg] https://releases.warp.dev/linux/deb stable main
           provides: [warp-terminal]
 
-        - id: crystal
-          title: Crystal
-          packages: [crystal]
+        - id: docker
+          title: Docker Engine
+          packages: [docker-ce, docker-ce-cli, containerd.io, docker-buildx-plugin, docker-compose-plugin]
           categories: [programming]
-          architectures: [amd64]
+          architectures: [amd64, arm64]
+          conflicts_remove: [docker.io, docker-doc, docker-compose, docker-compose-v2, podman-docker, containerd, runc]
           key:
-            url: https://packagecloud.io/84codes/crystal/gpgkey
-            keyring: /etc/apt/keyrings/crystal.gpg
-            dearmor: true
+            url: https://download.docker.com/linux/ubuntu/gpg
+            keyring: /etc/apt/keyrings/docker.asc
+            dearmor: false
           source:
-            file: /etc/apt/sources.list.d/crystal.list
+            file: /etc/apt/sources.list.d/docker.sources
             content: |
-              deb [signed-by=/etc/apt/keyrings/crystal.gpg] https://packagecloud.io/84codes/crystal/ubuntu/ {codename} main
-          provides: [crystal]
+              Types: deb
+              URIs: https://download.docker.com/linux/ubuntu
+              Suites: {codename}
+              Components: stable
+              Architectures: {arch}
+              Signed-By: /etc/apt/keyrings/docker.asc
+          provides: [docker, docker-compose]
 
   nvm:
     title: NVM
@@ -232,13 +211,7 @@ sources:
 
   npm:
     title: NPM
-    software:
-      - id: codex
-        title: OpenAI Codex CLI
-        package: "@openai/codex"
-        categories: [programming, ai]
-        depends_on: [nodejs]
-        provides: [codex]
+    software: []
 
   rustup:
     title: Rustup
@@ -253,12 +226,6 @@ sources:
   snap:
     title: Snap
     software:
-      - id: teams-for-linux
-        title: Microsoft Teams Wrapper
-        package: teams-for-linux
-        categories: [communication]
-        provides: [teams-for-linux]
-
       - id: whatsapp-desktop
         title: WhatsApp Desktop Wrapper
         package: whatsapp-desktop-client
@@ -277,12 +244,6 @@ sources:
         categories: [communication, privacy]
         provides: [proton-mail]
 
-      - id: outlook-wrapper
-        title: Outlook Wrapper
-        package: outlook-ew
-        categories: [communication]
-        provides: [outlook-ew]
-
   flatpak:
     title: Flatpak
     software:
@@ -295,6 +256,13 @@ sources:
   vendor_download:
     title: Vendor Downloads
     software:
+      - id: codex
+        title: OpenAI Codex CLI
+        categories: [programming, ai]
+        method: codex_cli_standalone
+        install_url: https://chatgpt.com/codex/install.sh
+        provides: [codex]
+
       - id: flutter
         title: Flutter SDK
         categories: [programming, mobile]
@@ -313,35 +281,20 @@ sources:
         method: android_studio_latest
         provides: [studio]
 
-      - id: android-sdk-command-line-tools
-        title: Android SDK Command-line Tools
-        categories: [programming, mobile]
-        method: android_sdk_command_line_tools
-        provides: [sdkmanager, avdmanager]
-
-      - id: android-platform-tools
-        title: Android Platform Tools
-        categories: [programming, mobile]
-        method: android_platform_tools
-        depends_on: [android-sdk-command-line-tools]
-        provides: [adb, fastboot]
-
-      - id: android-ndk
-        title: Android NDK
-        categories: [programming, mobile]
-        method: android_ndk
-        depends_on: [android-sdk-command-line-tools]
-        sdk_package: ndk;latest
-        provides: [ndk-build]
-
       - id: godot
         title: Godot
         categories: [game_dev]
         method: godot_latest
         provides: [godot]
 
-      - id: chromedriver
-        title: ChromeDriver
-        categories: [programming, browsers, automation]
-        method: chromedriver_latest
-        provides: [chromedriver]
+  deb:
+    title: Direct Deb
+    software:
+      - id: discord
+        title: Discord
+        url: https://discord.com/api/download?platform=linux&format=deb
+        package_name: discord
+        installed_command: discord
+        architectures: [amd64]
+        categories: [communication]
+        provides: [discord]

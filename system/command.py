@@ -136,16 +136,29 @@ class CommandRunner:
             return
 
         raw_key = self.download_to_temp(url, suffix=".key")
-        output = Path(tempfile.mkstemp(suffix=".gpg" if dearmor else ".asc")[1])
+        output_fd, output_name = tempfile.mkstemp(suffix=".gpg" if dearmor else ".asc")
+        os.close(output_fd)
+        output = Path(output_name)
         try:
             if dearmor:
                 self.run(["gpg", "--dearmor", "--yes", "--output", str(output), str(raw_key)])
             else:
                 shutil.copyfile(raw_key, output)
+            if self._same_file_bytes(output, destination):
+                self.info(f"Keyring already up to date: {destination}")
+                return
             self.run(["install", "-D", "-m", "0644", str(output), str(destination)], sudo=True)
         finally:
             raw_key.unlink(missing_ok=True)
             output.unlink(missing_ok=True)
+
+    def _same_file_bytes(self, source: Path, destination: Path) -> bool:
+        try:
+            return source.read_bytes() == destination.read_bytes()
+        except FileNotFoundError:
+            return False
+        except OSError:
+            return False
 
     def download_to_temp(self, url: str, *, suffix: str = "") -> Path:
         fd, temp_name = tempfile.mkstemp(suffix=suffix)

@@ -36,7 +36,7 @@ class Catalog:
         return {item.id: item for item in self.items}
 
     def source_names(self) -> set[str]:
-        return {item.source for item in self.items}
+        return {item.source for item in self.items} | set(self.source_titles)
 
 
 def load_catalog(path: Path) -> Catalog:

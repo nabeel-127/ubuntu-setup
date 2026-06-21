@@ -107,9 +107,11 @@ The catalog is source-first:
 
 1. Use Ubuntu apt when the package is suitable.
 2. Use official/vendor apt repositories when the vendor provides one.
-3. Use the vendor-recommended installer for language/toolchains such as Node.js,
-   Rust, Flutter, Swift, Android tools, Godot, and ChromeDriver.
-4. Use Snap or Flatpak when that is the practical packaged path.
+3. Use official direct deb downloads when that is the vendor-supported Linux
+   package path.
+4. Use the vendor-recommended installer for toolchains and apps such as Node.js,
+   Rust, Codex CLI, Flutter, Swift, Android Studio, and Godot.
+5. Use Snap or Flatpak when that is the practical packaged path.
 
 The Python code does not hardcode categories. Categories are labels in
 `config/categories.yaml` and on each software item in `config/software.yaml`.
@@ -123,6 +125,7 @@ before installing:
 - snap uses `snap list`
 - flatpak uses `flatpak info`
 - npm checks the global package list
+- deb compares the installed package version
 - vendor downloads check their installed command or target path
 
 Some toolchain commands may still refresh metadata or ensure defaults, but they
