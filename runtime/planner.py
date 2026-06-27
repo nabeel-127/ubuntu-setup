@@ -10,6 +10,18 @@ class InstallPlan:
     items: tuple[SoftwareItem, ...]
     source_order: tuple[str, ...]
 
+    def without_sources(self, excluded_sources: set[str]) -> InstallPlan:
+        return InstallPlan(
+            tuple(item for item in self.items if item.source not in excluded_sources),
+            self.source_order,
+        )
+
+    def without_ids(self, excluded_ids: set[str]) -> InstallPlan:
+        return InstallPlan(
+            tuple(item for item in self.items if item.id not in excluded_ids),
+            self.source_order,
+        )
+
     def grouped(self) -> list[tuple[str, list[SoftwareItem]]]:
         by_source: dict[str, list[SoftwareItem]] = {}
         for item in self.items:
@@ -41,6 +53,23 @@ def build_plan(
     )
 
     return InstallPlan(tuple(_with_dependencies(selected, catalog)), tuple(source_order))
+
+
+def build_uninstall_plan(
+    catalog: Catalog,
+    source_order: list[str],
+    categories: list[str] | None = None,
+    sources: list[str] | None = None,
+    only: list[str] | None = None,
+) -> InstallPlan:
+    selected = filter_candidates(
+        catalog,
+        categories=categories,
+        sources=sources,
+        only=only,
+    )
+
+    return InstallPlan(tuple(selected), tuple(source_order))
 
 
 def filter_candidates(

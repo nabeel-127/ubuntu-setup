@@ -18,20 +18,31 @@ class _Row:
     item: SoftwareItem | None = None
 
 
-def select_software(items: list[SoftwareItem], categories: dict[str, dict[str, Any]]) -> list[str]:
+def select_software(
+    items: list[SoftwareItem],
+    categories: dict[str, dict[str, Any]],
+    *,
+    title: str = "Select software to install",
+    selected_by_default: bool = True,
+    default_selected_ids: set[str] | None = None,
+) -> list[str]:
     if not items:
         return []
 
     rows = _category_rows(items, categories)
-    selected = {item.id for item in items}
+    if default_selected_ids is None:
+        selected = {item.id for item in items} if selected_by_default else set()
+    else:
+        visible_ids = {item.id for item in items}
+        selected = set(default_selected_ids) & visible_ids
 
     try:
-        return curses.wrapper(_run_selector, rows, selected)
+        return curses.wrapper(_run_selector, rows, selected, title)
     except curses.error as exc:
         raise RuntimeError(f"Unable to draw interactive selector: {exc}") from exc
 
 
-def _run_selector(stdscr, rows: list[_Row], selected: set[str]) -> list[str]:
+def _run_selector(stdscr, rows: list[_Row], selected: set[str], title: str) -> list[str]:
     curses.cbreak()
     stdscr.keypad(True)
     try:
@@ -53,7 +64,7 @@ def _run_selector(stdscr, rows: list[_Row], selected: set[str]) -> list[str]:
 
         visible = height - 5
         scroll = _scroll_for_cursor(cursor, scroll, visible)
-        _draw(stdscr, rows, selected, cursor, scroll, visible)
+        _draw(stdscr, rows, selected, cursor, scroll, visible, title)
 
         key = stdscr.getch()
         if key in (curses.KEY_UP, ord("k")):
@@ -85,11 +96,12 @@ def _draw(
     cursor: int,
     scroll: int,
     visible: int,
+    title: str,
 ) -> None:
     stdscr.erase()
     height, width = stdscr.getmaxyx()
 
-    _add_line(stdscr, 0, width, "Select software to install")
+    _add_line(stdscr, 0, width, title)
     _add_line(stdscr, 1, width, "Space toggles, Enter continues, a selects all, n selects none, q cancels")
 
     for offset, row in enumerate(rows[scroll : scroll + visible]):

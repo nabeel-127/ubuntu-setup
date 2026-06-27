@@ -16,6 +16,8 @@ class UbuntuHost:
     arch: str
     real_user: str
     real_home: Path
+    is_wsl: bool
+    has_systemd: bool
 
     @property
     def is_ubuntu(self) -> bool:
@@ -38,6 +40,8 @@ def detect_host(*, require_ubuntu: bool) -> UbuntuHost:
         arch=_dpkg_arch(),
         real_user=real_user,
         real_home=real_home,
+        is_wsl=_is_wsl(),
+        has_systemd=_has_systemd(),
     )
 
 
@@ -91,3 +95,22 @@ def _home_for_user(user: str) -> Path:
         return Path(completed.stdout.split(":", 6)[5])
     except Exception:
         return Path.home()
+
+
+def _is_wsl() -> bool:
+    if os.environ.get("WSL_DISTRO_NAME") or os.environ.get("WSL_INTEROP"):
+        return True
+
+    for path in [Path("/proc/version"), Path("/proc/sys/kernel/osrelease")]:
+        try:
+            text = path.read_text(encoding="utf-8").lower()
+        except OSError:
+            continue
+        if "microsoft" in text or "wsl" in text:
+            return True
+
+    return False
+
+
+def _has_systemd() -> bool:
+    return Path("/run/systemd/system").is_dir()

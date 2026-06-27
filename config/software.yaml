@@ -37,6 +37,7 @@ sources:
           title: OBS Studio
           packages: [obs-studio]
           categories: [media]
+          default_unchecked_on_wsl: true
           enable_components: [universe]
           provides: [obs]
 
@@ -45,6 +46,7 @@ sources:
           package_candidates: [steam, steam-installer]
           categories: [gaming]
           architectures: [amd64]
+          default_unchecked_on_wsl: true
           enable_components: [multiverse]
           foreign_architectures: [i386]
           provides: [steam]
@@ -54,6 +56,7 @@ sources:
           packages: [wine, winetricks]
           categories: [compatibility, gaming]
           architectures: [amd64]
+          default_unchecked_on_wsl: true
           enable_components: [multiverse]
           foreign_architectures: [i386]
           provides: [wine, winetricks]
@@ -62,6 +65,7 @@ sources:
           title: Tor Browser Launcher
           packages: [torbrowser-launcher]
           categories: [browsers, privacy]
+          default_unchecked_on_wsl: true
           enable_components: [universe]
           provides: [torbrowser-launcher]
 
@@ -69,12 +73,14 @@ sources:
           title: Aravis Tools
           packages: [aravis-tools]
           categories: [camera]
+          default_unchecked_on_wsl: true
           provides: [arv-tool-0.8]
 
         - id: blender
           title: Blender
           packages: [blender]
           categories: [creative, media]
+          default_unchecked_on_wsl: true
           provides: [blender]
 
         - id: dotnet-sdk
@@ -92,6 +98,7 @@ sources:
           packages: [microsoft-edge-stable]
           categories: [browsers]
           architectures: [amd64]
+          default_unchecked_on_wsl: true
           key:
             url: https://packages.microsoft.com/keys/microsoft.asc
             keyring: /usr/share/keyrings/packages.microsoft.gpg
@@ -107,6 +114,7 @@ sources:
           packages: [code]
           categories: [ides, programming]
           architectures: [amd64, arm64, armhf]
+          default_unchecked_on_wsl: true
           key:
             url: https://packages.microsoft.com/keys/microsoft.asc
             keyring: /usr/share/keyrings/packages.microsoft.gpg
@@ -122,6 +130,7 @@ sources:
           packages: [python3-gpg, dropbox]
           categories: [cloud_storage]
           architectures: [amd64]
+          default_unchecked_on_wsl: true
           key:
             url: https://linux.dropbox.com/fedora/rpm-public-key.asc
             keyring: /etc/apt/keyrings/dropbox.gpg
@@ -137,6 +146,7 @@ sources:
           packages: [beekeeper-studio]
           categories: [database, productivity]
           architectures: [amd64]
+          default_unchecked_on_wsl: true
           key:
             url: https://deb.beekeeperstudio.io/beekeeper.key
             keyring: /etc/apt/keyrings/beekeeper-studio.gpg
@@ -152,6 +162,7 @@ sources:
           packages: [sublime-text]
           categories: [editors, programming]
           architectures: [amd64, arm64]
+          default_unchecked_on_wsl: true
           key:
             url: https://download.sublimetext.com/sublimehq-pub.gpg
             keyring: /etc/apt/keyrings/sublimehq-pub.gpg
@@ -167,6 +178,7 @@ sources:
           packages: [warp-terminal]
           categories: [terminal, programming]
           architectures: [amd64, arm64]
+          default_unchecked_on_wsl: true
           key:
             url: https://releases.warp.dev/linux/keys/warp.asc
             keyring: /etc/apt/keyrings/warpdotdev.gpg
@@ -175,6 +187,8 @@ sources:
             file: /etc/apt/sources.list.d/warpdotdev.list
             content: |
               deb [arch={arch} signed-by=/etc/apt/keyrings/warpdotdev.gpg] https://releases.warp.dev/linux/deb stable main
+          obsolete_source_files:
+            - /etc/apt/sources.list.d/warpdotdev.sources
           provides: [warp-terminal]
 
         - id: docker
@@ -182,6 +196,7 @@ sources:
           packages: [docker-ce, docker-ce-cli, containerd.io, docker-buildx-plugin, docker-compose-plugin]
           categories: [programming]
           architectures: [amd64, arm64]
+          default_unchecked_on_wsl: true
           conflicts_remove: [docker.io, docker-doc, docker-compose, docker-compose-v2, podman-docker, containerd, runc]
           key:
             url: https://download.docker.com/linux/ubuntu/gpg
@@ -230,19 +245,15 @@ sources:
         title: WhatsApp Desktop Wrapper
         package: whatsapp-desktop-client
         categories: [communication]
+        default_unchecked_on_wsl: true
         provides: [whatsapp-desktop-client]
 
       - id: notion-desktop
         title: Notion Desktop Wrapper
         package: notion-desktop
         categories: [productivity]
+        default_unchecked_on_wsl: true
         provides: [notion-desktop]
-
-      - id: proton-mail
-        title: Proton Mail
-        package: proton-mail
-        categories: [communication, privacy]
-        provides: [proton-mail]
 
   flatpak:
     title: Flatpak
@@ -251,6 +262,7 @@ sources:
         title: Bottles
         package: com.usebottles.bottles
         categories: [compatibility, gaming]
+        default_unchecked_on_wsl: true
         provides: [com.usebottles.bottles]
 
   vendor_download:
@@ -267,28 +279,26 @@ sources:
         title: Flutter SDK
         categories: [programming, mobile]
         method: flutter_sdk
+        default_unchecked_on_wsl: true
         provides: [flutter, dart]
-
-      - id: swiftly
-        title: Swiftly
-        categories: [programming]
-        method: swiftly
-        provides: [swiftly, swift]
 
       - id: android-studio
         title: Android Studio
         categories: [ides, mobile]
         method: android_studio_latest
+        architectures: [amd64]
+        default_unchecked_on_wsl: true
         provides: [studio]
 
       - id: godot
         title: Godot
         categories: [game_dev]
         method: godot_latest
+        default_unchecked_on_wsl: true
         provides: [godot]
 
   deb:
-    title: Direct Deb
+    title: Vendor Deb Downloads
     software:
       - id: discord
         title: Discord
@@ -297,4 +307,17 @@ sources:
         installed_command: discord
         architectures: [amd64]
         categories: [communication]
+        default_unchecked_on_wsl: true
         provides: [discord]
+
+      - id: proton-mail
+        title: Proton Mail
+        package_name: proton-mail
+        version_feed:
+          url: https://proton.me/download/mail/linux/version.json
+          channel: Stable
+          file_identifier: ".deb (Ubuntu/Debian)"
+        architectures: [amd64]
+        categories: [communication, privacy]
+        default_unchecked_on_wsl: true
+        provides: [proton-mail]

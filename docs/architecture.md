@@ -1,7 +1,7 @@
 # Architecture
 
-`ubuntu-setup` is a terminal-only Python application for installing a configured
-Ubuntu workstation software catalog.
+`ubuntu-setup` is a terminal-only Python application for installing and
+uninstalling a configured Ubuntu workstation software catalog.
 
 ## Runtime Shape
 
@@ -18,8 +18,8 @@ ubuntu-setup
               -> system.command
 ```
 
-`runtime/` decides what should install. `system/` knows how to inspect and
-change the host.
+`runtime/` decides what should install or uninstall. `system/` knows how to
+inspect and change the host.
 
 ## Structure
 
@@ -77,8 +77,8 @@ tests/
 | `main.py` | Thin executable entrypoint. |
 | `bootstrap.py` | CLI parsing, YAML bootstrap, config loading, host detection, and handoff. |
 | `config/` | Declarative source, category, logging, and software data. |
-| `runtime/` | Catalog validation, terminal software selection, category/source filtering, dependency expansion, and plan execution order. |
-| `system/` | Ubuntu detection, sudo handling, command execution, profile updates, and package source adapters. |
+| `runtime/` | Catalog validation, terminal software selection, category/source filtering, install dependency expansion, and plan execution order. |
+| `system/` | Ubuntu/WSL detection, sudo handling, command execution, profile updates, and package source adapters. |
 | `docs/` | Durable project notes. |
 | `tests/` | Smoke and validation checks. |
 | `codex.md` | Work log and agent-facing project notes. |
@@ -120,15 +120,51 @@ grouping; additional categories remain labels and are shown alongside the item.
 
 ## Interactive Selection
 
-Install runs open a terminal checklist by default. The checklist reads enabled
-items from `config/software.yaml`, groups them by category title from
-`config/categories.yaml`, and returns selected software ids for the current run
-only. It does not edit config files. Dependency expansion still happens after
-selection, so dependencies of selected software may be added to the final plan.
+Install runs open a terminal checklist by default with all matching items
+checked. Uninstall runs use the same checklist with all matching items
+unchecked. The checklist reads enabled items from `config/software.yaml`, groups
+them by category title from `config/categories.yaml`, and returns selected
+software ids for the current run only. It does not edit config files.
+
+Install dependency expansion happens after selection, so dependencies of
+selected software may be added to the final install plan. Uninstall does not
+expand dependencies; it removes only selected or filtered software.
+
+Install execution order is: selection or filter resolution, dependency
+expansion, WSL default-skip filtering for non-interactive runs, source
+preconfiguration, base system preparation, then source adapters. Source
+preconfiguration lets adapters such as external apt repair repository files and
+keyrings before apt maintenance.
+Install runs also perform a repair-only pass for known configured apt sources
+before global apt maintenance, which can disable stale duplicate vendor source
+files that would otherwise make `apt update` fail.
+Base system preparation runs `apt update` and `apt upgrade -y` before checking
+or installing required base apt packages.
 
 `--list` remains non-interactive. `--yes` bypasses the checklist and preserves
-the immediate install path for scripts and other non-interactive runs. Any
-install or dry-run command without an interactive terminal must pass `--yes`.
+the immediate action path for scripts and other non-interactive runs. Any
+install/uninstall dry-run command without an interactive terminal must pass
+`--yes`. Non-interactive uninstall also requires at least one filter to avoid
+accidentally removing the full catalog.
+
+When WSL is detected for an interactive install, items marked
+`default_unchecked_on_wsl` in `config/software.yaml` remain visible but start
+unchecked. Users can still select them manually. Non-interactive WSL install
+runs skip those items by default; `--include-wsl-skipped` includes the full
+matching catalog, while `--include-wsl-sandboxed` remains a compatibility
+override for Snap and Flatpak items only.
+
+Each package adapter owns both install and uninstall behavior for its source via
+`install_items` and `uninstall_items`. Install adapters are expected to be safe
+to rerun: install missing software, update already installed selected software
+where the source supports it, and avoid duplicating repository, profile, or
+managed vendor-download state. Apt-backed adapters remove packages with `apt
+remove`; Snap and Flatpak call their native remove commands; vendor and
+toolchain adapters perform source-specific cleanup.
+
+Base system preparation remains fail-fast. Normal software item failures are
+recorded where possible, remaining selected items continue, and the CLI exits
+non-zero after printing a failed-items summary.
 
 ## Naming Rules
 

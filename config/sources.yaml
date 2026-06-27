@@ -29,4 +29,4 @@ sources:
   vendor_download:
     title: Vendor Downloads
   deb:
-    title: Direct Deb
+    title: Vendor Deb Downloads

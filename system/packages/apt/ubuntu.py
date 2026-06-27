@@ -34,6 +34,23 @@ def install_items(items: list[SoftwareItem], context: RuntimeContext) -> None:
         _run_post_install(item, context)
 
 
+def uninstall_items(items: list[SoftwareItem], context: RuntimeContext) -> None:
+    command = context.command
+
+    for item in items:
+        if not _supports_arch(item, context.host.arch):
+            command.warn(f"Skipping {item.title}: unsupported architecture {context.host.arch}")
+            continue
+
+        packages = _removal_packages_for_item(item, context)
+        if not packages:
+            command.info(f"Not installed: {item.title}")
+            continue
+
+        command.info(f"Uninstalling {item.title}: {', '.join(packages)}")
+        command.run(["apt", "remove", "-y", *packages], sudo=True)
+
+
 def _packages_for_item(item: SoftwareItem, context: RuntimeContext) -> list[str]:
     if item.data.get("resolver") == "dotnet_lts":
         return [_resolve_dotnet_package(context)]
@@ -49,6 +66,19 @@ def _packages_for_item(item: SoftwareItem, context: RuntimeContext) -> list[str]
         return [str(candidates[-1])]
 
     return item.packages
+
+
+def _removal_packages_for_item(item: SoftwareItem, context: RuntimeContext) -> list[str]:
+    if item.data.get("resolver") == "dotnet_lts":
+        candidates = ["dotnet-sdk-10.0", "dotnet-sdk-8.0"]
+    elif isinstance(item.data.get("package_candidates"), list):
+        candidates = [str(package) for package in item.data["package_candidates"]]
+    else:
+        candidates = item.packages
+
+    if context.command.dry_run:
+        return candidates
+    return [package for package in candidates if _package_installed(package, context)]
 
 
 def _resolve_dotnet_package(context: RuntimeContext) -> str:

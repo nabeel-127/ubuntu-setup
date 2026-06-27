@@ -12,6 +12,19 @@
 
 The ubuntu-setup script executed a comprehensive system configuration and software installation process on Ubuntu 24.04 Noble. The script successfully installed 75+ individual packages across multiple categories including development tools, media software, productivity applications, containerization platforms, and security tools. However, the script exited with code 1 due to a failed installation of the `proton-mail` snap package, which is a known limitation in certain containerized or sandboxed Ubuntu environments.
 
+## Follow-up Fix
+
+The catalog no longer installs Proton Mail through Snap. Proton Mail now uses
+Proton's vendor-provided Stable Ubuntu/Debian `.deb` feed, and WSL runs ask
+whether to skip selected Snap and Flatpak items before attempting those
+sandboxed package managers.
+
+Current install runs also perform `apt update` and `apt upgrade -y` after
+software selection and before installing selected software. Source adapters now
+use rerun-safe install-or-update behavior where supported, including vendor deb
+version checks and managed vendor download markers for tools such as Android
+Studio and Godot.
+
 ---
 
 ## Installation Categories and Results
@@ -188,15 +201,18 @@ The ubuntu-setup script successfully configured a comprehensive development and 
 - Gaming and entertainment use
 - Privacy-conscious browsing with Tor
 
-The single Proton Mail snap failure is a known environmental limitation and does not impact other system functionality. Users needing Proton Mail access can utilize the web interface or alternative configurations.
+The single Proton Mail snap failure was a known environmental limitation in this
+historical run and does not impact other system functionality. The current
+catalog installs Proton Mail through Proton's Stable Ubuntu/Debian `.deb` feed
+instead.
 
 ---
 
 ## Recommendations
 
-1. **For Proton Mail Users**: Use the Proton Mail web interface at https://mail.proton.me/ or configure an alternative email client with IMAP/SMTP bridge.
+1. **For Proton Mail Users**: Use the current catalog, which installs Proton Mail through Proton's Stable Ubuntu/Debian `.deb` feed instead of Snap.
 
-2. **System Maintenance**: Regularly run `sudo apt update && sudo apt upgrade` to keep all installed packages updated.
+2. **System Maintenance**: Install runs now perform `sudo apt update` and `sudo apt upgrade -y` before selected software installs. Regular system maintenance between setup runs remains useful.
 
 3. **Docker Post-Installation**: Add your user to the docker group for non-root docker commands:
    ```bash
